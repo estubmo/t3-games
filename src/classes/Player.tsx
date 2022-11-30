@@ -1,3 +1,61 @@
+import Projectile from "./Projectile";
+
+const PROJECTILE_VELOCITY_MULTIPLIER = 5;
+const SUPER_PROJECTILE_VELOCITY_MULTIPLIER = 15;
+const DEFAULT_PROJECTILE_DAMAGE = 10;
+const SUPER_PROJECTILE_DAMAGE = 100;
+
+const fireSuperModeProjectile = (
+  context: CanvasRenderingContext2D,
+  player: Player,
+  projectiles: Set<Projectile>,
+  angle: number
+) => {
+  const stroke = `hsl(${Math.random() * 360}, 90%, 90%)`;
+  const velocity = {
+    x: Math.cos(angle) * SUPER_PROJECTILE_VELOCITY_MULTIPLIER,
+    y: Math.sin(angle) * SUPER_PROJECTILE_VELOCITY_MULTIPLIER,
+  };
+
+  projectiles.add(
+    new Projectile(
+      context,
+      player.x,
+      player.y,
+      2,
+      "black",
+      velocity,
+      SUPER_PROJECTILE_DAMAGE,
+      stroke,
+      true
+    )
+  );
+};
+
+const fireNormalProjectile = (
+  context: CanvasRenderingContext2D,
+  player: Player,
+  projectiles: Set<Projectile>,
+  angle: number
+) => {
+  const velocity = {
+    x: Math.cos(angle) * PROJECTILE_VELOCITY_MULTIPLIER,
+    y: Math.sin(angle) * PROJECTILE_VELOCITY_MULTIPLIER,
+  };
+
+  projectiles.add(
+    new Projectile(
+      context,
+      player.x,
+      player.y,
+      5,
+      "white",
+      velocity,
+      DEFAULT_PROJECTILE_DAMAGE
+    )
+  );
+};
+
 export default class Player {
   x: number;
   y: number;
@@ -11,6 +69,9 @@ export default class Player {
   velX = 0;
   velY = 0;
   friction = 0.98;
+  shotCooldownCounter = 0;
+  attackSpeed = 10;
+  isShooting = false;
 
   constructor(
     context: CanvasRenderingContext2D,
@@ -63,6 +124,14 @@ export default class Player {
     );
 
     this.context.stroke();
+    if (this.shotCooldownCounter > 0) this.shotCooldownCounter--;
+    console.log(
+      "%cLMKG%cline:127%cthis.shotCooldownCounter ",
+      "color:#fff;background:#ee6f57;padding:3px;border-radius:2px",
+      "color:#fff;background:#1f3c88;padding:3px;border-radius:2px",
+      "color:#fff;background:rgb(179, 214, 110);padding:3px;border-radius:2px",
+      this.shotCooldownCounter
+    );
 
     // Cleanup
     this.context.setLineDash([]);
@@ -107,6 +176,25 @@ export default class Player {
   moveRight() {
     if (this.velX < this.movementSpeed) {
       this.velX++;
+    }
+  }
+
+  shoot(
+    projectiles: Set<Projectile>,
+    cursorPosition: { x: number; y: number }
+  ) {
+    if (this.shotCooldownCounter === 0) {
+      const angle = Math.atan2(
+        cursorPosition.y - this.y,
+        cursorPosition.x - this.x
+      );
+
+      if (this.superPowerOn) {
+        fireSuperModeProjectile(this.context, this, projectiles, angle);
+      } else {
+        fireNormalProjectile(this.context, this, projectiles, angle);
+      }
+      this.shotCooldownCounter = this.attackSpeed;
     }
   }
 }

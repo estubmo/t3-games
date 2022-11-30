@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Enemy from "../classes/Enemy";
-import Projectile from "../classes/Projectile";
+import type Projectile from "../classes/Projectile";
 import Particle from "../classes/Particle";
 import Player from "../classes/Player";
 import Link from "next/link";
@@ -11,12 +11,8 @@ interface CanvasProps {
   height: number;
 }
 
-const PROJECTILE_VELOCITY_MULTIPLIER = 5;
-const SUPER_PROJECTILE_VELOCITY_MULTIPLIER = 15;
 const SUPER_POWER_ENABLE_NUM = 10;
 const ENEMY_SPAWN_TIMER = 750;
-const DEFAULT_PROJECTILE_DAMAGE = 10;
-const SUPER_PROJECTILE_DAMAGE = 100;
 const MINIMUM_ENEMY_HEALTH = 10;
 
 const Canvas = ({ width, height }: CanvasProps) => {
@@ -28,7 +24,6 @@ const Canvas = ({ width, height }: CanvasProps) => {
   const [showEnemyHealth, setShowEnemyHealth] = useState(false);
 
   // Debug info
-
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [numEnemies, setNumEnemies] = useState(0);
   const [numProjectiles, setNumProjectiles] = useState(0);
@@ -37,66 +32,6 @@ const Canvas = ({ width, height }: CanvasProps) => {
   const onStartGameClick = () => {
     setRun((prev) => !prev);
   };
-
-  const onClick = useCallback(
-    (
-      player: Player,
-      projectiles: Set<Projectile>,
-      event: MouseEvent,
-      context: CanvasRenderingContext2D,
-      canvas: HTMLCanvasElement
-    ) => {
-      // Deals with mouse click event offset
-      const x =
-        event.clientX - canvas.offsetLeft + document.documentElement.scrollLeft;
-      const y =
-        event.clientY - canvas.offsetTop + document.documentElement.scrollTop;
-
-      const angle = Math.atan2(y - player.y, x - player.x);
-
-      if (player.superPowerOn) {
-        // Super power projectile
-        const stroke = `hsl(${Math.random() * 360}, 90%, 90%)`;
-        const velocity = {
-          x: Math.cos(angle) * SUPER_PROJECTILE_VELOCITY_MULTIPLIER,
-          y: Math.sin(angle) * SUPER_PROJECTILE_VELOCITY_MULTIPLIER,
-        };
-
-        projectiles.add(
-          new Projectile(
-            context,
-            player.x,
-            player.y,
-            2,
-            "black",
-            velocity,
-            SUPER_PROJECTILE_DAMAGE,
-            stroke,
-            true
-          )
-        );
-      } else {
-        // Normal projectile
-        const velocity = {
-          x: Math.cos(angle) * PROJECTILE_VELOCITY_MULTIPLIER,
-          y: Math.sin(angle) * PROJECTILE_VELOCITY_MULTIPLIER,
-        };
-
-        projectiles.add(
-          new Projectile(
-            context,
-            player.x,
-            player.y,
-            5,
-            "white",
-            velocity,
-            DEFAULT_PROJECTILE_DAMAGE
-          )
-        );
-      }
-    },
-    []
-  );
 
   const getSpawnFromAnyAngle = useCallback(
     (radius: number): { x: number; y: number; angle: number } => {
@@ -167,6 +102,10 @@ const Canvas = ({ width, height }: CanvasProps) => {
       const projectiles = new Set<Projectile>();
       const enemies = new Set<Enemy>();
       const particles = new Set<Particle>();
+
+      //Mouse
+      const cursorPosition = { x: 0, y: 0 };
+      let leftMouseDown = false;
 
       let score = 0;
 
@@ -249,6 +188,10 @@ const Canvas = ({ width, height }: CanvasProps) => {
         if (delta > fpsInterval) {
           then = now - (delta % fpsInterval);
 
+          if (leftMouseDown) {
+            player.shoot(projectiles, cursorPosition);
+          }
+
           // Color background
           context.fillStyle = "rgba(0, 0, 0, 0.3)";
           context.fillRect(0, 0, width, height);
@@ -288,7 +231,7 @@ const Canvas = ({ width, height }: CanvasProps) => {
               enemies.delete(enemy);
               enemyExplosion(enemy);
 
-              player.incrementSuperPowerCharge();
+              if (!player.superPowerOn) player.incrementSuperPowerCharge();
               if (player.superPowerCharge === SUPER_POWER_ENABLE_NUM)
                 enablePlayerSuperPower();
 
@@ -309,9 +252,6 @@ const Canvas = ({ width, height }: CanvasProps) => {
       render();
       startSpawnEnemies(enemies, context, showEnemyHealth);
 
-      const handleMouseClick = (event: MouseEvent) =>
-        onClick(player, projectiles, event, context, canvas);
-
       const handleKeyDown = (event: KeyboardEvent) => {
         if (event.altKey && event.key === "d")
           setShowDebugInfo((prev) => !prev);
@@ -321,17 +261,43 @@ const Canvas = ({ width, height }: CanvasProps) => {
         if (event.key === "d") player.moveRight();
       };
 
-      canvas.addEventListener("click", handleMouseClick);
-      //   canvas.addEventListener('contextmenu', function(evt) { // Right click
+      // Events and Event listeneres
+
+      const getMousePos = (e: MouseEvent) => {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        };
+      };
+
+      const mouseMovementEvent = (e: MouseEvent) => {
+        const mousePos = getMousePos(e);
+        cursorPosition["x"] = mousePos.x;
+        cursorPosition["y"] = mousePos.y;
+      };
+
+      const onMouseDown = () => {
+        leftMouseDown = true;
+      };
+      const onMouseUp = () => {
+        leftMouseDown = false;
+      };
+
+      canvas.addEventListener("mousemove", mouseMovementEvent, false);
+      canvas.addEventListener("mousedown", onMouseDown);
+      canvas.addEventListener("mouseup", onMouseUp);
       window.addEventListener("keydown", handleKeyDown);
 
       return () => {
         window.cancelAnimationFrame(animationFrameId);
+        canvas.removeEventListener("mousemove", mouseMovementEvent);
+        canvas.removeEventListener("mousedown", onMouseDown);
+        canvas.removeEventListener("mouseup", onMouseUp);
         window.removeEventListener("keydown", handleKeyDown);
-        canvas.removeEventListener("click", handleMouseClick);
       };
     }
-  }, [width, height, onClick, startSpawnEnemies, run, showEnemyHealth]);
+  }, [width, height, startSpawnEnemies, run, showEnemyHealth]);
 
   return (
     <div className="border border-gray-400 bg-black">
