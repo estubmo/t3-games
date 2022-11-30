@@ -110,24 +110,6 @@ const Canvas = ({ width, height }: CanvasProps) => {
     [getSpawnFromAnyAngle]
   );
 
-  const spawnPowerup = useCallback(
-    (context: CanvasRenderingContext2D): Powerup => {
-      const radius = 10;
-
-      const stroke = `hsl(${Math.random() * 360}, 90%, 90%)`;
-
-      const { x, y, angle } = getSpawnFromAnyAngle(radius);
-
-      const velocity = {
-        x: Math.cos(angle) * 10,
-        y: Math.sin(angle) * 10,
-      };
-
-      return new Powerup(x, y, radius, "black", context, stroke, velocity);
-    },
-    [getSpawnFromAnyAngle]
-  );
-
   const startSpawnEnemies = useCallback(
     (
       enemies: Set<Enemy>,
@@ -303,15 +285,7 @@ const Canvas = ({ width, height }: CanvasProps) => {
         canvas.removeEventListener("click", handleMouseClick);
       };
     }
-  }, [
-    width,
-    height,
-    onClick,
-    startSpawnEnemies,
-    spawnPowerup,
-    run,
-    showEnemyHealth,
-  ]);
+  }, [width, height, onClick, startSpawnEnemies, run, showEnemyHealth]);
 
   return (
     <div className="border border-gray-400 bg-black">
