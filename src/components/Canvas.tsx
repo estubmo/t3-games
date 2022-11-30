@@ -4,6 +4,12 @@ import Projectile from "../classes/Projectile";
 import Particle from "../classes/Particle";
 import Powerup from "../classes/Powerup";
 import Player from "../classes/Player";
+import Link from "next/link";
+import {
+  ArrowLeftIcon,
+  ArrowUturnLeftIcon,
+  BeakerIcon,
+} from "@heroicons/react/24/solid";
 
 interface CanvasProps {
   width: number;
@@ -341,7 +347,10 @@ const Canvas = ({ width, height }: CanvasProps) => {
 
       {!run && (
         <div className="fixed inset-0 flex items-center justify-center">
-          <div className="flex w-full max-w-md select-none flex-col items-center justify-center rounded bg-white p-4">
+          <div className="relative flex w-full max-w-md select-none flex-col items-center justify-center rounded bg-white p-4">
+            <Link className="absolute top-0 left-0 p-2" href="/">
+              <ArrowLeftIcon className="h-6 w-6" />
+            </Link>
             <h1 className="text-4xl font-bold">{score}</h1>
             <p className="text-sm text-gray-700">Points</p>
             <div className="py-2"></div>
