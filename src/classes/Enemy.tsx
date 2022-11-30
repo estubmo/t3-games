@@ -8,15 +8,15 @@ export default class Enemy extends Circle {
   showEnemyHealth: boolean;
 
   constructor(
+    context: CanvasRenderingContext2D,
     x: number,
     y: number,
     radius: number,
     color: string,
-    context: CanvasRenderingContext2D,
     velocity: { x: number; y: number },
     showEnemyHealth = false
   ) {
-    super(x, y, radius, color, context);
+    super(context, x, y, radius, color);
     this.damageTaken = 0;
     this.velocity = velocity;
     this.originialRadius = radius;
@@ -36,8 +36,15 @@ export default class Enemy extends Circle {
       this.context.fillText(Math.floor(this.radius).toString(), this.x, this.y);
   }
 
-  takeDamage() {
-    this.damageTaken += 10;
+  takeDamage(damage: number) {
+    this.damageTaken += damage;
+    console.log(
+      "%cLMKG%cline:40%cdamage",
+      "color:#fff;background:#ee6f57;padding:3px;border-radius:2px",
+      "color:#fff;background:#1f3c88;padding:3px;border-radius:2px",
+      "color:#fff;background:rgb(217, 104, 49);padding:3px;border-radius:2px",
+      damage
+    );
     const newRadius = this.originialRadius - this.damageTaken;
     gsap.to(this, {
       radius: newRadius > 0 ? newRadius : 0,

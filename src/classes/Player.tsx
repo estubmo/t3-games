@@ -13,12 +13,11 @@ export default class Player {
   friction = 0.98;
 
   constructor(
+    context: CanvasRenderingContext2D,
     x: number,
     y: number,
-
     radius: number,
     color: string,
-    context: CanvasRenderingContext2D,
     stroke?: string
   ) {
     this.x = x;

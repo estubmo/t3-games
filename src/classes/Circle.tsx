@@ -7,11 +7,11 @@ export default class Circle {
   stroke?: string;
 
   constructor(
+    context: CanvasRenderingContext2D,
     x: number,
     y: number,
     radius: number,
     color: string,
-    context: CanvasRenderingContext2D,
     stroke?: string
   ) {
     this.x = x;

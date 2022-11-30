@@ -3,20 +3,23 @@ import Circle from "./Circle";
 export default class Projectile extends Circle {
   velocity: { x: number; y: number };
   isSuperPower: boolean;
+  damage: number;
 
   constructor(
+    context: CanvasRenderingContext2D,
     x: number,
     y: number,
     radius: number,
     color: string,
-    context: CanvasRenderingContext2D,
     velocity: { x: number; y: number },
+    damage: number,
     stroke?: string,
     isSuperPower = false
   ) {
-    super(x, y, radius, color, context, stroke);
+    super(context, x, y, radius, color, stroke);
     this.velocity = velocity;
     this.isSuperPower = isSuperPower;
+    this.damage = damage;
   }
 
   update() {

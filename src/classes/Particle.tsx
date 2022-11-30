@@ -7,14 +7,14 @@ export default class Particle extends Circle {
   alpha: number;
 
   constructor(
+    context: CanvasRenderingContext2D,
     x: number,
     y: number,
     radius: number,
     color: string,
-    context: CanvasRenderingContext2D,
     velocity: { x: number; y: number }
   ) {
-    super(x, y, radius, color, context);
+    super(context, x, y, radius, color);
     this.velocity = velocity;
     this.alpha = 1;
   }

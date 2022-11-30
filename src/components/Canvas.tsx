@@ -15,6 +15,8 @@ const PROJECTILE_VELOCITY_MULTIPLIER = 5;
 const SUPER_PROJECTILE_VELOCITY_MULTIPLIER = 15;
 const SUPER_POWER_ENABLE_NUM = 10;
 const ENEMY_SPAWN_TIMER = 750;
+const DEFAULT_PROJECTILE_DAMAGE = 10;
+const SUPER_PROJECTILE_DAMAGE = 100;
 
 const Canvas = ({ width, height }: CanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -31,7 +33,7 @@ const Canvas = ({ width, height }: CanvasProps) => {
   const onClick = useCallback(
     (
       player: Player,
-      projectiles: Array<Projectile>,
+      projectiles: Set<Projectile>,
       enableSuperPower: boolean,
       event: MouseEvent,
       context: CanvasRenderingContext2D,
@@ -48,28 +50,41 @@ const Canvas = ({ width, height }: CanvasProps) => {
       if (enableSuperPower) {
         // Super power projectile
         const stroke = `hsl(${Math.random() * 360}, 90%, 90%)`;
-        projectiles.push(
+        const velocity = {
+          x: Math.cos(angle) * SUPER_PROJECTILE_VELOCITY_MULTIPLIER,
+          y: Math.sin(angle) * SUPER_PROJECTILE_VELOCITY_MULTIPLIER,
+        };
+
+        projectiles.add(
           new Projectile(
+            context,
             player.x,
             player.y,
             2,
             "black",
-            context,
-            {
-              x: Math.cos(angle) * SUPER_PROJECTILE_VELOCITY_MULTIPLIER,
-              y: Math.sin(angle) * SUPER_PROJECTILE_VELOCITY_MULTIPLIER,
-            },
+            velocity,
+            SUPER_PROJECTILE_DAMAGE,
             stroke,
             true
           )
         );
       } else {
         // Normal projectile
-        projectiles.push(
-          new Projectile(player.x, player.y, 5, "white", context, {
-            x: Math.cos(angle) * PROJECTILE_VELOCITY_MULTIPLIER,
-            y: Math.sin(angle) * PROJECTILE_VELOCITY_MULTIPLIER,
-          })
+        const velocity = {
+          x: Math.cos(angle) * PROJECTILE_VELOCITY_MULTIPLIER,
+          y: Math.sin(angle) * PROJECTILE_VELOCITY_MULTIPLIER,
+        };
+
+        projectiles.add(
+          new Projectile(
+            context,
+            player.x,
+            player.y,
+            5,
+            "white",
+            velocity,
+            DEFAULT_PROJECTILE_DAMAGE
+          )
         );
       }
     },
@@ -105,7 +120,7 @@ const Canvas = ({ width, height }: CanvasProps) => {
         y: Math.sin(angle) * 5,
       };
 
-      return new Enemy(x, y, radius, color, context, velocity, showEnemyHealth);
+      return new Enemy(context, x, y, radius, color, velocity, showEnemyHealth);
     },
     [getSpawnFromAnyAngle]
   );
@@ -141,10 +156,10 @@ const Canvas = ({ width, height }: CanvasProps) => {
       if (context == null) throw new Error("Could not get context");
 
       // Declare objects and arrays
-      const player = new Player(width / 2, height / 2, 10, "white", context);
-      const projectiles: Array<Projectile> = [];
-      const enemies: Set<Enemy> = new Set();
-      const particles: Array<Particle> = [];
+      const player = new Player(context, width / 2, height / 2, 10, "white");
+      const projectiles = new Set<Projectile>();
+      const enemies = new Set<Enemy>();
+      const particles = new Set<Particle>();
 
       let score = 0;
 
@@ -169,24 +184,25 @@ const Canvas = ({ width, height }: CanvasProps) => {
           player.draw();
 
           // Particles
-          particles.forEach((particle, index) => {
+          particles.forEach((particle) => {
             if (particle.alpha <= 0) {
-              particles.splice(index, 1);
+              particles.delete(particle);
             }
             particle.update();
           });
 
           // Projectiles
-          projectiles.forEach((projectile, index) => {
+          projectiles.forEach((projectile) => {
             projectile.update();
 
+            // Cleanup
             if (
               projectile.x - projectile.radius < 1 ||
               projectile.x - projectile.radius > width ||
               projectile.y - projectile.radius < 1 ||
               projectile.y - projectile.radius > height
             ) {
-              projectiles.splice(index, 1);
+              projectiles.delete(projectile);
             }
           });
 
@@ -198,13 +214,13 @@ const Canvas = ({ width, height }: CanvasProps) => {
               enemies.delete(enemy);
 
               for (let i = 0; i < enemy.radius * 2; i++) {
-                particles.push(
+                particles.add(
                   new Particle(
+                    context,
                     enemy.x,
                     enemy.y,
                     Math.random() * 2,
                     enemy.color,
-                    context,
                     {
                       x: (Math.random() - 0.5) * (Math.random() * 6),
                       y: (Math.random() - 0.5) * (Math.random() * 6),
@@ -241,7 +257,7 @@ const Canvas = ({ width, height }: CanvasProps) => {
             }
 
             // Projectiles
-            projectiles.forEach((projectile, projectileIndex) => {
+            projectiles.forEach((projectile) => {
               const dist = Math.hypot(
                 projectile.x - enemy.x,
                 projectile.y - enemy.y
@@ -250,10 +266,9 @@ const Canvas = ({ width, height }: CanvasProps) => {
               // When projectile touches enemy
               if (dist - enemy.radius - projectile.radius < 1) {
                 if (enemy.radius >= 10) {
-                  enemy.takeDamage();
+                  enemy.takeDamage(projectile.damage);
 
-                  if (!projectile.isSuperPower)
-                    projectiles.splice(projectileIndex, 1);
+                  if (!projectile.isSuperPower) projectiles.delete(projectile);
                 }
               }
             });
@@ -269,12 +284,12 @@ const Canvas = ({ width, height }: CanvasProps) => {
               height - 5
             );
             context.fillText(
-              `Projectiles:  ${projectiles.length}`,
+              `Projectiles:  ${projectiles.size}`,
               width / 2 + 100,
               height - 5
             );
             context.fillText(
-              `Particles:  ${particles.length}`,
+              `Particles:  ${particles.size}`,
               width / 2 + 200,
               height - 5
             );
