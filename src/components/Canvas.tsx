@@ -162,7 +162,7 @@ const Canvas = ({ width, height }: CanvasProps) => {
 
       const render = () => {
         // Color background
-        context.fillStyle = "rgba(0, 0, 0, 0.1";
+        context.fillStyle = "rgba(0, 0, 0, 0.3)";
         context.fillRect(0, 0, width, height);
 
         // Draw functions
@@ -311,11 +311,9 @@ const Canvas = ({ width, height }: CanvasProps) => {
         if (event.key === "a") player.moveLeft();
         if (event.key === "s") player.moveDown();
         if (event.key === "d") player.moveRight();
-        console.log("event.key: " + event.key);
       };
 
       canvas.addEventListener("click", handleMouseClick);
-      //   canvas.addEventListener("click", handleMouseClick);
       //   canvas.addEventListener('contextmenu', function(evt) { // Right click
       window.addEventListener("keydown", handleKeyDown);
 
@@ -336,8 +334,8 @@ const Canvas = ({ width, height }: CanvasProps) => {
   ]);
 
   return (
-    <>
-      <div className="flex w-full select-none bg-black text-white">
+    <div className="border bg-gradient-to-tr from-gray-800 to-gray-900">
+      <div className="absolute flex w-full select-none px-4 py-2 text-white">
         Score: {score}
       </div>
 
@@ -366,7 +364,7 @@ const Canvas = ({ width, height }: CanvasProps) => {
       )}
 
       <canvas ref={canvasRef} height={height} width={width} />
-    </>
+    </div>
   );
 };
 

@@ -12,7 +12,9 @@ const MyApp: AppType<{ session: Session | null }> = ({
 }) => {
   return (
     <SessionProvider session={session}>
-      <Component {...pageProps} />
+      <div className="scrollbar-hide">
+        <Component {...pageProps} />
+      </div>
     </SessionProvider>
   );
 };
