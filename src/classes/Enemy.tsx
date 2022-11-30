@@ -38,13 +38,6 @@ export default class Enemy extends Circle {
 
   takeDamage(damage: number) {
     this.damageTaken += damage;
-    console.log(
-      "%cLMKG%cline:40%cdamage",
-      "color:#fff;background:#ee6f57;padding:3px;border-radius:2px",
-      "color:#fff;background:#1f3c88;padding:3px;border-radius:2px",
-      "color:#fff;background:rgb(217, 104, 49);padding:3px;border-radius:2px",
-      damage
-    );
     const newRadius = this.originialRadius - this.damageTaken;
     gsap.to(this, {
       radius: newRadius > 0 ? newRadius : 0,
