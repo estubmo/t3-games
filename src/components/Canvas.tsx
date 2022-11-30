@@ -2,14 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Enemy from "../classes/Enemy";
 import Projectile from "../classes/Projectile";
 import Particle from "../classes/Particle";
-import Powerup from "../classes/Powerup";
 import Player from "../classes/Player";
 import Link from "next/link";
-import {
-  ArrowLeftIcon,
-  ArrowUturnLeftIcon,
-  BeakerIcon,
-} from "@heroicons/react/24/solid";
+import { ArrowLeftIcon } from "@heroicons/react/24/solid";
 
 interface CanvasProps {
   width: number;
@@ -158,12 +153,10 @@ const Canvas = ({ width, height }: CanvasProps) => {
       const projectiles: Array<Projectile> = [];
       const enemies: Set<Enemy> = new Set();
       const particles: Array<Particle> = [];
-      const powerups: Array<Powerup> = [];
 
       let frameCount = 0;
       let animationFrameId: number;
       let showDebugInfo = false;
-      let numPowerups = 0;
       let enableSuperPower = false;
 
       const render = () => {
@@ -174,12 +167,6 @@ const Canvas = ({ width, height }: CanvasProps) => {
         // Draw functions
         // Player
         player.draw();
-
-        // Powerup text
-        context.fillStyle = "blue";
-        context.font = "12px serif";
-        context.strokeStyle = "blue";
-        context.textAlign = "center";
 
         // Particles
         particles.forEach((particle, index) => {
@@ -206,8 +193,10 @@ const Canvas = ({ width, height }: CanvasProps) => {
         // Enemies
         enemies.forEach((enemy) => {
           enemy.update(player.x, player.y);
+
           if (enemy.radius < 10) {
             enemies.delete(enemy);
+
             for (let i = 0; i < enemy.radius * 2; i++) {
               particles.push(
                 new Particle(
@@ -223,7 +212,6 @@ const Canvas = ({ width, height }: CanvasProps) => {
                 )
               );
             }
-            enemies.delete(enemy);
 
             // Handle kill counter and powerups
             if (!enableSuperPower) player.incrementSuperPowerCharge();
@@ -243,21 +231,21 @@ const Canvas = ({ width, height }: CanvasProps) => {
             setScore((prev) => prev + 1);
           }
 
-          const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-
           // Death - When enemy touches player
+          const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
           if (dist - enemy.radius - player.radius < 1) {
             setRun(false);
             cancelAnimationFrame(animationFrameId);
           }
 
+          // Projectiles
           projectiles.forEach((projectile, projectileIndex) => {
             const dist = Math.hypot(
               projectile.x - enemy.x,
               projectile.y - enemy.y
             );
 
-            // when projectile touches enemy
+            // When projectile touches enemy
             if (dist - enemy.radius - projectile.radius < 1) {
               if (enemy.radius >= 10) {
                 enemy.takeDamage();
@@ -269,20 +257,6 @@ const Canvas = ({ width, height }: CanvasProps) => {
           });
         });
 
-        // Powerups
-        powerups.forEach((powerup, index) => {
-          powerup.update();
-
-          const dist = Math.hypot(player.x - powerup.x, player.y - powerup.y);
-
-          if (dist - powerup.radius - player.radius < 1) {
-            powerups.splice(index, 1);
-            numPowerups++;
-            if (numPowerups === SUPER_POWER_ENABLE_NUM) {
-            }
-          }
-        });
-
         // Update functions
         animationFrameId = window.requestAnimationFrame(render);
         frameCount++;
@@ -290,7 +264,7 @@ const Canvas = ({ width, height }: CanvasProps) => {
         if (showDebugInfo) {
           context.fillStyle = "white";
           context.font = "12px serif";
-          context.fillText(`FrameCounter:  ${frameCount}`, 5, height - 5);
+          context.fillText(`FrameCounter:  ${frameCount}`, 10, height - 5);
           context.fillText(`Enemies:  ${enemies.size}`, width / 2, height - 5);
           context.fillText(
             `Projectiles:  ${projectiles.length}`,
