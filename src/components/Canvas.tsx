@@ -81,6 +81,7 @@ const Canvas = ({ width, height }: CanvasProps) => {
   );
 
   const persistScore = (score: number) => {
+    // TODO: Add persistence with Prisma and Planetscale
     console.log("SCORE: ", score);
   };
 
