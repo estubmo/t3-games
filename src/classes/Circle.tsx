@@ -5,7 +5,6 @@ export default class Circle {
   color: string;
   context: CanvasRenderingContext2D;
   stroke?: string;
-  superPowerOn: boolean;
 
   constructor(
     x: number,
@@ -21,7 +20,6 @@ export default class Circle {
     this.color = color;
     this.context = context;
     this.stroke = stroke;
-    this.superPowerOn = false;
   }
 
   draw() {
@@ -34,11 +32,5 @@ export default class Circle {
     this.context.strokeStyle = this.stroke || "transparent";
     this.context.stroke();
     this.context.restore();
-  }
-
-  toggleSuperPower(value: boolean) {
-    this.superPowerOn = value;
-
-    this.color = this.superPowerOn ? "red" : "white";
   }
 }
