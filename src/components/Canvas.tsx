@@ -123,10 +123,20 @@ const Canvas = ({ width, height }: CanvasProps) => {
     [spawnEnemy]
   );
 
+  const persistScore = (score: number) => {
+    console.log("SCORE: ", score);
+  };
   useEffect(() => {
-    if (canvasRef.current && run) {
+    if (canvasRef.current) {
+      if (!run) return;
+      setScore(0);
       const canvas = canvasRef.current;
-      const context = canvas.getContext("2d");
+      const context = canvas.getContext("2d", { alpha: false });
+
+      // Framerate management
+      let then = Date.now();
+      const fps = 60;
+      const fpsInterval = 1000 / fps;
 
       if (context == null) throw new Error("Could not get context");
 
@@ -136,128 +146,139 @@ const Canvas = ({ width, height }: CanvasProps) => {
       const enemies: Set<Enemy> = new Set();
       const particles: Array<Particle> = [];
 
-      let frameCount = 0;
+      let score = 0;
+
       let animationFrameId: number;
       let showDebugInfo = false;
       let enableSuperPower = false;
 
       const render = () => {
-        // Color background
-        context.fillStyle = "rgba(0, 0, 0, 0.3)";
-        context.fillRect(0, 0, width, height);
+        animationFrameId = window.requestAnimationFrame(render);
+        const now = Date.now();
 
-        // Draw functions
-        // Player
-        player.draw();
+        const delta = now - then;
+        if (delta > fpsInterval) {
+          then = now - (delta % fpsInterval);
 
-        // Particles
-        particles.forEach((particle, index) => {
-          if (particle.alpha <= 0) {
-            particles.splice(index, 1);
-          }
-          particle.update();
-        });
+          // Color background
+          context.fillStyle = "rgba(0, 0, 0, 0.3)";
+          context.fillRect(0, 0, width, height);
 
-        // Projectiles
-        projectiles.forEach((projectile, index) => {
-          projectile.update();
+          // Draw functions
+          // Player
+          player.draw();
 
-          if (
-            projectile.x - projectile.radius < 1 ||
-            projectile.x - projectile.radius > width ||
-            projectile.y - projectile.radius < 1 ||
-            projectile.y - projectile.radius > height
-          ) {
-            projectiles.splice(index, 1);
-          }
-        });
-
-        // Enemies
-        enemies.forEach((enemy) => {
-          enemy.update(player.x, player.y);
-
-          if (enemy.radius < 10) {
-            enemies.delete(enemy);
-
-            for (let i = 0; i < enemy.radius * 2; i++) {
-              particles.push(
-                new Particle(
-                  enemy.x,
-                  enemy.y,
-                  Math.random() * 2,
-                  enemy.color,
-                  context,
-                  {
-                    x: (Math.random() - 0.5) * (Math.random() * 6),
-                    y: (Math.random() - 0.5) * (Math.random() * 6),
-                  }
-                )
-              );
+          // Particles
+          particles.forEach((particle, index) => {
+            if (particle.alpha <= 0) {
+              particles.splice(index, 1);
             }
-
-            // Handle kill counter and powerups
-            if (!enableSuperPower) player.incrementSuperPowerCharge();
-            if (player.superPowerCharge === SUPER_POWER_ENABLE_NUM) {
-              enableSuperPower = true;
-              player.toggleSuperPower(true);
-              const intervalId = setInterval(() => {
-                if (player.superPowerCharge === 0) {
-                  enableSuperPower = false;
-                  player.toggleSuperPower(false);
-                  clearInterval(intervalId);
-                } else player.decrementSuperPowerCharge();
-              }, 500);
-            }
-
-            // Make score available outside useEffect
-            setScore((prev) => prev + 1);
-          }
-
-          // Death - When enemy touches player
-          const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-          if (dist - enemy.radius - player.radius < 1) {
-            setRun(false);
-            cancelAnimationFrame(animationFrameId);
-          }
+            particle.update();
+          });
 
           // Projectiles
-          projectiles.forEach((projectile, projectileIndex) => {
-            const dist = Math.hypot(
-              projectile.x - enemy.x,
-              projectile.y - enemy.y
-            );
+          projectiles.forEach((projectile, index) => {
+            projectile.update();
 
-            // When projectile touches enemy
-            if (dist - enemy.radius - projectile.radius < 1) {
-              if (enemy.radius >= 10) {
-                enemy.takeDamage();
-
-                if (!projectile.isSuperPower)
-                  projectiles.splice(projectileIndex, 1);
-              }
+            if (
+              projectile.x - projectile.radius < 1 ||
+              projectile.x - projectile.radius > width ||
+              projectile.y - projectile.radius < 1 ||
+              projectile.y - projectile.radius > height
+            ) {
+              projectiles.splice(index, 1);
             }
           });
-        });
 
-        // Update functions
-        animationFrameId = window.requestAnimationFrame(render);
-        frameCount++;
-        if (frameCount === 1) setScore(0);
-        if (showDebugInfo) {
-          context.fillStyle = "white";
-          context.font = "12px serif";
-          context.fillText(`FrameCounter:  ${frameCount}`, 10, height - 5);
-          context.fillText(`Enemies:  ${enemies.size}`, width / 2, height - 5);
-          context.fillText(
-            `Projectiles:  ${projectiles.length}`,
-            width / 2 + 100,
-            height - 5
-          );
-          context.fillText(
-            `Particles:  ${particles.length}`,
-            width / 2 + 200,
-            height - 5
-          );
+          // Enemies
+          enemies.forEach((enemy) => {
+            enemy.update(player.x, player.y);
+
+            if (enemy.radius < 10) {
+              enemies.delete(enemy);
+
+              for (let i = 0; i < enemy.radius * 2; i++) {
+                particles.push(
+                  new Particle(
+                    enemy.x,
+                    enemy.y,
+                    Math.random() * 2,
+                    enemy.color,
+                    context,
+                    {
+                      x: (Math.random() - 0.5) * (Math.random() * 6),
+                      y: (Math.random() - 0.5) * (Math.random() * 6),
+                    }
+                  )
+                );
+              }
+
+              // Handle kill counter and powerups
+              if (!enableSuperPower) player.incrementSuperPowerCharge();
+              if (player.superPowerCharge === SUPER_POWER_ENABLE_NUM) {
+                enableSuperPower = true;
+                player.toggleSuperPower(true);
+                const intervalId = setInterval(() => {
+                  if (player.superPowerCharge === 0) {
+                    enableSuperPower = false;
+                    player.toggleSuperPower(false);
+                    clearInterval(intervalId);
+                  } else player.decrementSuperPowerCharge();
+                }, 500);
+              }
+
+              // Make score available outside useEffect
+              score++;
+              setScore((prev) => prev + 1);
+            }
+
+            // Death - When enemy touches player
+            const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+            if (dist - enemy.radius - player.radius < 1) {
+              setRun(false);
+              cancelAnimationFrame(animationFrameId);
+              persistScore(score);
+            }
+
+            // Projectiles
+            projectiles.forEach((projectile, projectileIndex) => {
+              const dist = Math.hypot(
+                projectile.x - enemy.x,
+                projectile.y - enemy.y
+              );
+
+              // When projectile touches enemy
+              if (dist - enemy.radius - projectile.radius < 1) {
+                if (enemy.radius >= 10) {
+                  enemy.takeDamage();
+
+                  if (!projectile.isSuperPower)
+                    projectiles.splice(projectileIndex, 1);
+                }
+              }
+            });
+          });
+
+          // Update functions
+          if (showDebugInfo) {
+            context.fillStyle = "white";
+            context.font = "12px serif";
+            context.fillText(
+              `Enemies:  ${enemies.size}`,
+              width / 2,
+              height - 5
+            );
+            context.fillText(
+              `Projectiles:  ${projectiles.length}`,
+              width / 2 + 100,
+              height - 5
+            );
+            context.fillText(
+              `Particles:  ${particles.length}`,
+              width / 2 + 200,
+              height - 5
+            );
+          }
         }
       };
 
