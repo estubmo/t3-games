@@ -334,7 +334,7 @@ const Canvas = ({ width, height }: CanvasProps) => {
   ]);
 
   return (
-    <div className="border bg-gradient-to-tr from-gray-800 to-gray-900">
+    <div className="border border-gray-400 bg-black">
       <div className="absolute flex w-full select-none px-4 py-2 text-white">
         Score: {score}
       </div>
