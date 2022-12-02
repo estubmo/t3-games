@@ -1,10 +1,10 @@
+import TINSGame from "@games/TINSGame";
 import React, { useEffect, useRef, useState } from "react";
-import Canvas from "../components/Canvas";
 
 const MAX_WIDTH = 1920;
 const MAX_HEIGHT = 1080;
 
-const CanvasShooter = () => {
+const TINS = () => {
   const divRef = useRef<HTMLDivElement>(null);
 
   type WindowDimensions = {
@@ -36,9 +36,9 @@ const CanvasShooter = () => {
       className="fixed flex min-h-screen w-full items-center justify-center bg-gradient-to-tr from-gray-800 to-gray-900"
       ref={divRef}
     >
-      <Canvas width={dimension.width} height={dimension.height} />
+      <TINSGame width={dimension.width} height={dimension.height} />
     </div>
   );
 };
 
-export default CanvasShooter;
+export default TINS;

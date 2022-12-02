@@ -1,5 +1,5 @@
+import R3FDemo from "@games/R3FDemo";
 import React from "react";
-import R3FDemo from "../components/R3FDemo";
 
 const ReactThreeFiberGame = () => {
   return (

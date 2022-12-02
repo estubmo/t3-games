@@ -22,8 +22,8 @@ async function main() {
   });
 
   id = uuidv4();
-  name = "React Three Fiber - WIP";
-  description = "Just a canvas for a React Three Fiber game.";
+  name = "React Three Fiber";
+  description = "Just a canvas for a React Three Fiber game. [WIP]";
   shortName = "r3f";
 
   await prisma.game.upsert({

@@ -5,23 +5,20 @@ import { signIn, signOut, useSession } from "next-auth/react";
 
 import { trpc } from "../utils/trpc";
 import { type Game } from "../server/trpc/router/game";
+import { ArrowRightIcon } from "@heroicons/react/24/solid";
 
 const GameBoxLink = (game: Game): JSX.Element => {
   const { name, description, shortName } = game;
-  console.log(
-    "%cLMKG%cline:9%cgame",
-    "color:#fff;background:#ee6f57;padding:3px;border-radius:2px",
-    "color:#fff;background:#1f3c88;padding:3px;border-radius:2px",
-    "color:#fff;background:rgb(95, 92, 51);padding:3px;border-radius:2px",
-    game
-  );
 
   return (
     <Link
-      className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
+      className="relative flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
       href={shortName}
     >
-      <h3 className="text-2xl font-bold"> {name} →</h3>
+      <div className="absolute top-0 right-0 p-4">
+        <ArrowRightIcon className="h-6 w-6" />
+      </div>
+      <h3 className="text-2xl font-bold"> {name} </h3>
       <div className="text-lg">{description} </div>
     </Link>
   );

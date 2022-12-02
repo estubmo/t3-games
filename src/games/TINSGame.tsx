@@ -15,7 +15,7 @@ const SUPER_POWER_ENABLE_NUM = 10;
 const ENEMY_SPAWN_TIMER = 750;
 const MINIMUM_ENEMY_HEALTH = 10;
 
-const Canvas = ({ width, height }: CanvasProps) => {
+const TINSGame = ({ width, height }: CanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasCenterX = width / 2;
   const canvasCenterY = height / 2;
@@ -346,4 +346,4 @@ const Canvas = ({ width, height }: CanvasProps) => {
   );
 };
 
-export default Canvas;
+export default TINSGame;
