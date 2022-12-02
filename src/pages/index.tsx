@@ -4,9 +4,33 @@ import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
 
 import { trpc } from "../utils/trpc";
+import { type Game } from "../server/trpc/router/game";
+
+const GameBoxLink = (game: Game): JSX.Element => {
+  const { name, description, shortName } = game;
+  console.log(
+    "%cLMKG%cline:9%cgame",
+    "color:#fff;background:#ee6f57;padding:3px;border-radius:2px",
+    "color:#fff;background:#1f3c88;padding:3px;border-radius:2px",
+    "color:#fff;background:rgb(95, 92, 51);padding:3px;border-radius:2px",
+    game
+  );
+
+  return (
+    <Link
+      className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
+      href={shortName}
+    >
+      <h3 className="text-2xl font-bold"> {name} →</h3>
+      <div className="text-lg">{description} </div>
+    </Link>
+  );
+};
 
 const Home: NextPage = () => {
-  const hello = trpc.example.hello.useQuery({ text: "from tRPC" });
+  const { data: games } = trpc.game.getAll.useQuery();
+
+  if (!games) return <div>Loading games...</div>;
 
   return (
     <>
@@ -23,20 +47,9 @@ const Home: NextPage = () => {
             Library
           </h1>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-              href="/game001"
-            >
-              <h3 className="text-2xl font-bold"> HTML Canvas Shooter →</h3>
-              <div className="text-lg">A basic game made in HTML Canvas</div>
-            </Link>
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-              href="/game002"
-            >
-              <h3 className="text-2xl font-bold">R3F Game →</h3>
-              <div className="text-lg">A game made with React Three Fiber</div>
-            </Link>
+            {games.map((game) => (
+              <GameBoxLink key={game.id} {...game} />
+            ))}
           </div>
         </div>
       </main>
