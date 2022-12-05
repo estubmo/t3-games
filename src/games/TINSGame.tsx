@@ -17,16 +17,30 @@ const ENEMY_SPAWN_TIMER = 750;
 const MINIMUM_ENEMY_HEALTH = 10;
 
 const TINSGame = ({ width, height }: CanvasProps) => {
-  // trcp
-  const gameQuery = trpc.game.byShortName.useQuery({ shortName: "tins" });
-  const addScoreMutation = trpc.game.addScoreByGameShortName.useMutation();
+  // Score stuff
+  const { data: gameData } = trpc.game.byShortName.useQuery({
+    shortName: "tins",
+  });
+  //   const topTenScores = trpc.score.topTenByGameId.useQuery({
+  //     gameId: gameData.id,
+  //   }, { });
+  //   const topTenScoresAray = topTenScores?.data?.map((x) => x.score) || [];
+  //   const lowestScore = Math.min(...topTenScoresAray);
+  //   const addScoreMutation = trpc.score.addScoreByGameId.useMutation();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasCenterX = width / 2;
   const canvasCenterY = height / 2;
+
+  // Score stuff
   const [score, setScore] = useState(0);
+  const [name, setName] = useState("");
+  const [savedName, setSavedName] = useState("");
+
   const [run, setRun] = useState(false);
   const [showEnemyHealth, setShowEnemyHealth] = useState(false);
+  const [firstRun, setFirstRun] = useState(true);
+  const [showAddNewHighscore, setShowAddNewHighSchore] = useState(false);
 
   // Debug info
   const [showDebugInfo, setShowDebugInfo] = useState(false);
@@ -85,20 +99,20 @@ const TINSGame = ({ width, height }: CanvasProps) => {
     [spawnEnemy]
   );
 
-  const persistScore = (score: number) => {
-    if (!gameQuery?.data?.shortName) throw Error("No game found");
-    addScoreMutation.mutate({
-      score,
-      name: "someUser", //TODO: Change this
-      shortName: gameQuery.data.shortName,
-    });
-    console.log("SCORE: ", score);
+  const onGameEnd = (score: number) => {
+    // if (score > lowestScore) {
+    //   setShowAddNewHighSchore(true);
+    // }
+  };
+
+  const onSaveNameClick = () => {
+    setSavedName(name);
   };
 
   useEffect(() => {
     if (canvasRef.current) {
       if (!run) return;
-
+      setFirstRun(false);
       // Reset score on start
       setScore(0);
 
@@ -138,7 +152,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         if (dist - enemy.radius - player.radius < 1) {
           setRun(false);
           cancelAnimationFrame(animationFrameId);
-          persistScore(score);
+          onGameEnd(score);
         }
       };
 
@@ -310,20 +324,76 @@ const TINSGame = ({ width, height }: CanvasProps) => {
     }
   }, [width, height, startSpawnEnemies, run, showEnemyHealth]);
 
+  const handleChangeName = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setName(event.target.value);
+  };
+
   return (
     <div className="border border-gray-400 bg-black">
       <div className="absolute flex w-full select-none px-4 py-2 text-white">
         Score: {score}
       </div>
 
-      {!run && (
+      {showAddNewHighscore && (
+        <div className="fixed inset-0 flex items-center justify-center">
+          <div className="relative flex w-full max-w-md select-none flex-col items-center justify-center rounded bg-white p-4">
+            <h1 className="text-4xl font-bold">{score}</h1>
+            <p className="text-sm text-gray-700">Points</p>
+
+            <div className="py-2"></div>
+            <p className="text-sm text-gray-700">
+              Congratulations, your score is in the top 10!
+            </p>
+            {!savedName && (
+              <>
+                <h1 className="text-4xl font-bold">Add your name:</h1>
+                <input
+                  type="text"
+                  placeholder="Your name here"
+                  onChange={handleChangeName}
+                />
+              </>
+            )}
+            <button
+              className="text-md w-full rounded-full bg-blue-500 p-2 text-white"
+              onClick={onSaveNameClick}
+            >
+              Save
+            </button>
+            <div className="py-2"></div>
+          </div>
+        </div>
+      )}
+
+      {!run && !showAddNewHighscore && (
         <div className="fixed inset-0 flex items-center justify-center">
           <div className="relative flex w-full max-w-md select-none flex-col items-center justify-center rounded bg-white p-4">
             <Link className="absolute top-0 left-0 p-2" href="/">
               <ArrowLeftIcon className="h-6 w-6" />
             </Link>
-            <h1 className="text-4xl font-bold">{score}</h1>
-            <p className="text-sm text-gray-700">Points</p>
+            {!firstRun && (
+              <>
+                <h1 className="text-4xl font-bold">{score}</h1>
+                <p className="text-sm text-gray-700">Points</p>
+              </>
+            )}
+            {firstRun && (
+              <>
+                <h1 className="text-4xl font-bold">There Is No Sun!</h1>
+                <div className="py-2" />
+                <p className="text-sm text-gray-700">
+                  Try to beat the current highscore. You can{" "}
+                  <span className="bg-gray-500 font-mono text-gray-200">
+                    wasd
+                  </span>{" "}
+                  to move and hold{" "}
+                  <span className="bg-gray-500 font-mono text-gray-200">
+                    left mouse button
+                  </span>{" "}
+                  to shoot projectiles.
+                </p>
+              </>
+            )}
             <div className="py-2"></div>
             <button
               className="text-md w-full rounded-full bg-blue-500 p-2 text-white"
