@@ -27,26 +27,4 @@ export const gameRouter = router({
         },
       });
     }),
-  addScoreByGameShortName: publicProcedure
-    .input(
-      z.object({ score: z.number(), name: z.string(), shortName: z.string() })
-    )
-    .mutation(({ ctx, input }) => {
-      const { shortName, name, score } = input;
-      ctx.prisma.game
-        .findUnique({
-          where: {
-            shortName,
-          },
-        })
-        .then((game) => {
-          return ctx.prisma.score.create({
-            data: {
-              gameId: game?.id,
-              name,
-              score,
-            },
-          });
-        });
-    }),
 });
