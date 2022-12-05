@@ -8,6 +8,7 @@ async function main() {
   let description =
     "A 2D HTML5 Canvas Space Shoot 'Em Up. \nOf course my first game is a space shooter. Anyway, my first game. Yay!";
   let shortName = "tins";
+
   await prisma.game.upsert({
     where: {
       id,

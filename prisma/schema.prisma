@@ -63,7 +63,7 @@ model Game {
     id          String  @id @default(cuid())
     name        String
     description String?
-    shortName   String
+    shortName   String  @unique
     scores      Score[]
 }
 
