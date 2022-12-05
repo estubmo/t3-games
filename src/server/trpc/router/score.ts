@@ -2,15 +2,27 @@ import { z } from "zod";
 
 import { router, publicProcedure } from "../trpc";
 
+export const Score = z.object({
+  id: z.string(),
+  createdAt: z.date(),
+  score: z.number(),
+  name: z.string(),
+  gameId: z.string(),
+});
+
+export type Score = z.infer<typeof Score>;
+
 export const scoreRouter = router({
-  hello: publicProcedure
-    .input(z.object({ text: z.string().nullish() }).nullish())
-    .query(({ input }) => {
-      return {
-        greeting: `Hello ${input?.text ?? "world"}`,
-      };
+  byGameId: publicProcedure
+    .input(
+      z.object({
+        gameId: z.string(),
+      })
+    )
+    .query(({ ctx, input }) => {
+      const { gameId } = input;
+      return ctx.prisma.score.findMany({
+        where: { gameId },
+      });
     }),
-  getAll: publicProcedure.query(({ ctx }) => {
-    return ctx.prisma.score.findMany();
-  }),
 });

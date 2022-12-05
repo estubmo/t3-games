@@ -5,6 +5,7 @@ import Particle from "../classes/Particle";
 import Player from "../classes/Player";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
+import { trpc } from "@utils/trpc";
 
 interface CanvasProps {
   width: number;
@@ -16,6 +17,10 @@ const ENEMY_SPAWN_TIMER = 750;
 const MINIMUM_ENEMY_HEALTH = 10;
 
 const TINSGame = ({ width, height }: CanvasProps) => {
+  // trcp
+  const gameQuery = trpc.game.byShortName.useQuery({ shortName: "tins" });
+  const addScoreMutation = trpc.game.addScoreByGameShortName.useMutation();
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasCenterX = width / 2;
   const canvasCenterY = height / 2;
@@ -81,7 +86,12 @@ const TINSGame = ({ width, height }: CanvasProps) => {
   );
 
   const persistScore = (score: number) => {
-    // TODO: Add persistence with Prisma and Planetscale
+    if (!gameQuery?.data?.shortName) throw Error("No game found");
+    addScoreMutation.mutate({
+      score,
+      name: "someUser", //TODO: Change this
+      shortName: gameQuery.data.shortName,
+    });
     console.log("SCORE: ", score);
   };
 
