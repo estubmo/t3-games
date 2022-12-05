@@ -1,32 +1,34 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import Enemy from "../classes/Enemy";
-import type Projectile from "../classes/Projectile";
-import Particle from "../classes/Particle";
-import Player from "../classes/Player";
-import Link from "next/link";
-import { ArrowLeftIcon } from "@heroicons/react/24/solid";
+import Enemy from "../../classes/Enemy";
+import type Projectile from "../../classes/Projectile";
+import Particle from "../../classes/Particle";
+import Player from "../../classes/Player";
 import { trpc } from "@utils/trpc";
+import StartScreen from "./StartScreen";
 
-interface CanvasProps {
+type CanvasProps = {
   width: number;
   height: number;
-}
+};
 
 const SUPER_POWER_ENABLE_NUM = 10;
 const ENEMY_SPAWN_TIMER = 750;
 const MINIMUM_ENEMY_HEALTH = 10;
 
+export type GameState =
+  | "WELCOME"
+  | "RUNNING"
+  | "ENDED"
+  | "ADDNAME"
+  | "HIGHSCORE";
+
 const TINSGame = ({ width, height }: CanvasProps) => {
-  // Score stuff
-  const { data: gameData } = trpc.game.byShortName.useQuery({
+  // trpc
+  const { data, isLoading } = trpc.game.byShortName.useQuery({
     shortName: "tins",
   });
-  //   const topTenScores = trpc.score.topTenByGameId.useQuery({
-  //     gameId: gameData.id,
-  //   }, { });
-  //   const topTenScoresAray = topTenScores?.data?.map((x) => x.score) || [];
-  //   const lowestScore = Math.min(...topTenScoresAray);
-  //   const addScoreMutation = trpc.score.addScoreByGameId.useMutation();
+  const gameId = data?.id;
+  const addScoreMutation = trpc.score.addScoreByGameId.useMutation();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasCenterX = width / 2;
@@ -35,12 +37,8 @@ const TINSGame = ({ width, height }: CanvasProps) => {
   // Score stuff
   const [score, setScore] = useState(0);
   const [name, setName] = useState("");
-  const [savedName, setSavedName] = useState("");
 
-  const [run, setRun] = useState(false);
   const [showEnemyHealth, setShowEnemyHealth] = useState(false);
-  const [firstRun, setFirstRun] = useState(true);
-  const [showAddNewHighscore, setShowAddNewHighSchore] = useState(false);
 
   // Debug info
   const [showDebugInfo, setShowDebugInfo] = useState(false);
@@ -48,9 +46,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
   const [numProjectiles, setNumProjectiles] = useState(0);
   const [numParticles, setNumParticles] = useState(0);
 
-  const onStartGameClick = () => {
-    setRun((prev) => !prev);
-  };
+  const [gameState, setGameState] = useState<GameState>("WELCOME");
 
   const getSpawnFromAnyAngle = useCallback(
     (radius: number): { x: number; y: number; angle: number } => {
@@ -99,23 +95,21 @@ const TINSGame = ({ width, height }: CanvasProps) => {
     [spawnEnemy]
   );
 
-  const onGameEnd = (score: number) => {
-    // if (score > lowestScore) {
-    //   setShowAddNewHighSchore(true);
-    // }
-  };
-
-  const onSaveNameClick = () => {
-    setSavedName(name);
+  const handleSaveScore = (name: string) => {
+    if (!gameId) throw new Error("No gameId");
+    addScoreMutation.mutate({
+      gameId,
+      score,
+      name,
+    });
   };
 
   useEffect(() => {
     if (canvasRef.current) {
-      if (!run) return;
-      setFirstRun(false);
+      if (gameState !== "RUNNING") return;
       // Reset score on start
+      setGameState("RUNNING");
       setScore(0);
-
       // Canvas init
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d", { alpha: false });
@@ -132,8 +126,6 @@ const TINSGame = ({ width, height }: CanvasProps) => {
       const cursorPosition = { x: 0, y: 0 };
       let leftMouseDown = false;
 
-      let score = 0;
-
       // Framerate management
       let animationFrameId: number;
       let then = Date.now();
@@ -142,7 +134,6 @@ const TINSGame = ({ width, height }: CanvasProps) => {
 
       // Functions
       const updateScore = () => {
-        score++;
         setScore((prev) => prev + 1); // Make score available outside useEffect
       };
 
@@ -150,9 +141,8 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         // Death - When enemy touches player
         const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
         if (dist - enemy.radius - player.radius < 1) {
-          setRun(false);
           cancelAnimationFrame(animationFrameId);
-          onGameEnd(score);
+          setGameState("ENDED");
         }
       };
 
@@ -322,11 +312,9 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         window.removeEventListener("keydown", handleKeyDown);
       };
     }
-  }, [width, height, startSpawnEnemies, run, showEnemyHealth]);
+  }, [width, height, startSpawnEnemies, showEnemyHealth, gameState]);
 
-  const handleChangeName = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setName(event.target.value);
-  };
+  if (isLoading || !gameId) return <div>Loading game</div>;
 
   return (
     <div className="border border-gray-400 bg-black">
@@ -334,66 +322,39 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         Score: {score}
       </div>
 
-      {showAddNewHighscore && (
-        <div className="fixed inset-0 flex items-center justify-center">
-          <div className="relative flex w-full max-w-md select-none flex-col items-center justify-center rounded bg-white p-4">
-            <h1 className="text-4xl font-bold">{score}</h1>
-            <p className="text-sm text-gray-700">Points</p>
-
-            <div className="py-2"></div>
-            <p className="text-sm text-gray-700">
-              Congratulations, your score is in the top 10!
-            </p>
-            {!savedName && (
-              <>
-                <h1 className="text-4xl font-bold">Add your name:</h1>
-                <input
-                  type="text"
-                  placeholder="Your name here"
-                  onChange={handleChangeName}
-                />
-              </>
-            )}
-            <button
-              className="text-md w-full rounded-full bg-blue-500 p-2 text-white"
-              onClick={onSaveNameClick}
-            >
-              Save
-            </button>
-            <div className="py-2"></div>
-          </div>
-        </div>
+      {gameState !== "RUNNING" && (
+        <StartScreen
+          gameId={gameId}
+          gameState={gameState}
+          setGameState={setGameState}
+          score={score}
+          name={name}
+          onSaveName={setName}
+          onSaveScore={handleSaveScore}
+          showEnemyHealth={showEnemyHealth}
+          onShowEnemyHealth={setShowEnemyHealth}
+        />
       )}
-
-      {!run && !showAddNewHighscore && (
+      {/*
+      {showStartScreen && (
         <div className="fixed inset-0 flex items-center justify-center">
           <div className="relative flex w-full max-w-md select-none flex-col items-center justify-center rounded bg-white p-4">
             <Link className="absolute top-0 left-0 p-2" href="/">
               <ArrowLeftIcon className="h-6 w-6" />
             </Link>
-            {!firstRun && (
-              <>
-                <h1 className="text-4xl font-bold">{score}</h1>
-                <p className="text-sm text-gray-700">Points</p>
-              </>
-            )}
-            {firstRun && (
-              <>
-                <h1 className="text-4xl font-bold">There Is No Sun!</h1>
-                <div className="py-2" />
-                <p className="text-sm text-gray-700">
-                  Try to beat the current highscore. You can{" "}
-                  <span className="bg-gray-500 font-mono text-gray-200">
-                    wasd
-                  </span>{" "}
-                  to move and hold{" "}
-                  <span className="bg-gray-500 font-mono text-gray-200">
-                    left mouse button
-                  </span>{" "}
-                  to shoot projectiles.
-                </p>
-              </>
-            )}
+
+            <h1 className="text-4xl font-bold">There Is No Sun!</h1>
+            <div className="py-2" />
+            <p className="text-sm text-gray-700">
+              Try to beat the current highscore. You can{" "}
+              <span className="bg-gray-500 font-mono text-gray-200">wasd</span>{" "}
+              to move and hold{" "}
+              <span className="bg-gray-500 font-mono text-gray-200">
+                left mouse button
+              </span>{" "}
+              to shoot projectiles.
+            </p>
+
             <div className="py-2"></div>
             <button
               className="text-md w-full rounded-full bg-blue-500 p-2 text-white"
@@ -411,7 +372,36 @@ const TINSGame = ({ width, height }: CanvasProps) => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
+
+      {/* {showRestart && (
+        <div className="fixed inset-0 flex items-center justify-center">
+          <div className="relative flex w-full max-w-md select-none flex-col items-center justify-center rounded bg-white p-4">
+            <Link className="absolute top-0 left-0 p-2" href="/">
+              <ArrowLeftIcon className="h-6 w-6" />
+            </Link>
+
+            <h1 className="text-4xl font-bold">{score}</h1>
+            <p className="text-sm text-gray-700">Points</p>
+
+            <div className="py-2"></div>
+            <button
+              className="text-md w-full rounded-full bg-blue-500 p-2 text-white"
+              onClick={onStartGameClick}
+            >
+              Start Game
+            </button>
+            <div className="flex gap-2 pt-1 text-sm">
+              <p>Show enemy health:</p>
+              <input
+                type="checkbox"
+                checked={showEnemyHealth}
+                onChange={() => setShowEnemyHealth((prev) => !prev)}
+              />
+            </div>
+          </div>
+        </div>
+      )} */}
 
       {showDebugInfo && (
         <div className="absolute bottom-0 left-0 flex  w-full select-none flex-col px-4 py-2 text-white">

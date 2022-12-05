@@ -1,4 +1,4 @@
-import TINSGame from "@games/TINSGame";
+import TINSGame from "@games/TINS/TINSGame";
 import { trpc } from "@utils/trpc";
 import React, { useLayoutEffect, useRef, useState } from "react";
 
