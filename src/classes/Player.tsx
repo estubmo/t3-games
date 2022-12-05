@@ -125,13 +125,6 @@ export default class Player {
 
     this.context.stroke();
     if (this.shotCooldownCounter > 0) this.shotCooldownCounter--;
-    console.log(
-      "%cLMKG%cline:127%cthis.shotCooldownCounter ",
-      "color:#fff;background:#ee6f57;padding:3px;border-radius:2px",
-      "color:#fff;background:#1f3c88;padding:3px;border-radius:2px",
-      "color:#fff;background:rgb(179, 214, 110);padding:3px;border-radius:2px",
-      this.shotCooldownCounter
-    );
 
     // Cleanup
     this.context.setLineDash([]);
