@@ -27,7 +27,14 @@ const GameBoxLink = (game: Game): JSX.Element => {
 const Home: NextPage = () => {
   const { data: games } = trpc.game.getAll.useQuery();
 
-  if (!games) return <div>Loading games...</div>;
+  if (!games)
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-bl from-gray-900 to-gray-800">
+        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
+          Loading games...
+        </div>
+      </main>
+    );
 
   return (
     <>

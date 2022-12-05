@@ -314,7 +314,12 @@ const TINSGame = ({ width, height }: CanvasProps) => {
     }
   }, [width, height, startSpawnEnemies, showEnemyHealth, gameState]);
 
-  if (isLoading || !gameId) return <div>Loading game</div>;
+  if (isLoading || !gameId)
+    return (
+      <div className="flex h-screen w-full items-center justify-center border border-gray-400 bg-black text-lg text-white">
+        Loading game...
+      </div>
+    );
 
   return (
     <div className="border border-gray-400 bg-black">
@@ -335,73 +340,6 @@ const TINSGame = ({ width, height }: CanvasProps) => {
           onShowEnemyHealth={setShowEnemyHealth}
         />
       )}
-      {/*
-      {showStartScreen && (
-        <div className="fixed inset-0 flex items-center justify-center">
-          <div className="relative flex w-full max-w-md select-none flex-col items-center justify-center rounded bg-white p-4">
-            <Link className="absolute top-0 left-0 p-2" href="/">
-              <ArrowLeftIcon className="h-6 w-6" />
-            </Link>
-
-            <h1 className="text-4xl font-bold">There Is No Sun!</h1>
-            <div className="py-2" />
-            <p className="text-sm text-gray-700">
-              Try to beat the current highscore. You can{" "}
-              <span className="bg-gray-500 font-mono text-gray-200">wasd</span>{" "}
-              to move and hold{" "}
-              <span className="bg-gray-500 font-mono text-gray-200">
-                left mouse button
-              </span>{" "}
-              to shoot projectiles.
-            </p>
-
-            <div className="py-2"></div>
-            <button
-              className="text-md w-full rounded-full bg-blue-500 p-2 text-white"
-              onClick={onStartGameClick}
-            >
-              Start Game
-            </button>
-            <div className="flex gap-2 pt-1 text-sm">
-              <p>Show enemy health:</p>
-              <input
-                type="checkbox"
-                checked={showEnemyHealth}
-                onChange={() => setShowEnemyHealth((prev) => !prev)}
-              />
-            </div>
-          </div>
-        </div>
-      )} */}
-
-      {/* {showRestart && (
-        <div className="fixed inset-0 flex items-center justify-center">
-          <div className="relative flex w-full max-w-md select-none flex-col items-center justify-center rounded bg-white p-4">
-            <Link className="absolute top-0 left-0 p-2" href="/">
-              <ArrowLeftIcon className="h-6 w-6" />
-            </Link>
-
-            <h1 className="text-4xl font-bold">{score}</h1>
-            <p className="text-sm text-gray-700">Points</p>
-
-            <div className="py-2"></div>
-            <button
-              className="text-md w-full rounded-full bg-blue-500 p-2 text-white"
-              onClick={onStartGameClick}
-            >
-              Start Game
-            </button>
-            <div className="flex gap-2 pt-1 text-sm">
-              <p>Show enemy health:</p>
-              <input
-                type="checkbox"
-                checked={showEnemyHealth}
-                onChange={() => setShowEnemyHealth((prev) => !prev)}
-              />
-            </div>
-          </div>
-        </div>
-      )} */}
 
       {showDebugInfo && (
         <div className="absolute bottom-0 left-0 flex  w-full select-none flex-col px-4 py-2 text-white">
