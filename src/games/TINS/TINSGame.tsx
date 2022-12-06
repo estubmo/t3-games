@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { trpc } from "@utils/trpc";
 import StartScreen from "./StartScreen";
 import GameMap from "./classes/GameMap";
+import { sanitizeDatabaseInput } from "@utils/functions";
 
 type CanvasProps = {
   width: number;
@@ -45,7 +46,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
     addScoreMutation.mutate({
       gameId,
       score,
-      name,
+      name: sanitizeDatabaseInput(name),
     });
   };
 
@@ -53,7 +54,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
     if (canvasRef.current) {
       if (gameState !== "RUNNING") return;
 
-      setGameState("RUNNING");
+      setGameState("ADDNAME");
 
       // Reset score on start
       setScore(0);
@@ -93,7 +94,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         setGameState("ENDED");
       };
 
-      const offScreenMap = new GameMap(
+      const map = new GameMap(
         offScreenContext,
         width,
         height,
@@ -112,7 +113,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         );
 
         // Draw the game objects to the off-screen canvas
-        offScreenMap.draw();
+        map.draw();
 
         // Copy the entire off-screen canvas to the on-screen canvas
         context?.drawImage(offScreenCanvas, 0, 0);
@@ -122,7 +123,6 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         // This animates the next frame
         animationFrameId = window.requestAnimationFrame(render);
         // map.draw();
-        drawGame();
 
         // Framerate handling
         const now = Date.now();
@@ -131,17 +131,15 @@ const TINSGame = ({ width, height }: CanvasProps) => {
           then = now - (delta % fpsInterval);
 
           if (leftMouseDown) {
-            offScreenMap.player.shoot(cursorPosition);
+            map.player.shoot(cursorPosition);
           }
 
-          // Color background
-          context.fillStyle = "rgba(0, 0, 0, 0.3)";
-          context.fillRect(0, 0, width, height);
+          drawGame();
 
           // Update functions
-          setNumEnemies(offScreenMap.enemies.size);
-          setNumProjectiles(offScreenMap.player.projectiles.size);
-          setNumParticles(offScreenMap.particles.size);
+          setNumEnemies(map.enemies.size);
+          setNumProjectiles(map.player.projectiles.size);
+          setNumParticles(map.particles.size);
         }
       };
 
@@ -151,11 +149,11 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         if (event.ctrlKey && event.altKey && event.key === "d") {
           setShowDebugInfo((prev) => !prev);
         }
-        offScreenMap.player.handleKeyDown(event);
+        map.player.handleKeyDown(event);
       };
 
       const handleKeyUp = (event: KeyboardEvent) => {
-        offScreenMap.player.handleKeyUp(event);
+        map.player.handleKeyUp(event);
       };
 
       // Events and Event listeneres
@@ -182,7 +180,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
       };
 
       const handleVisibilityChange = () => {
-        offScreenMap.pause(document.hidden);
+        map.pause(document.hidden);
       };
 
       canvas.addEventListener("mousemove", mouseMovementEvent, false);
@@ -203,6 +201,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
           "visibilitychange",
           handleVisibilityChange
         );
+        map.stopSpawnenemies();
       };
     }
   }, [width, height, showEnemyHealth, gameState]);

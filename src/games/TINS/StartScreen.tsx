@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { SetStateAction } from "react";
 import React, { useState } from "react";
 import type { GameState } from "./TINSGame";
+import clsx from "clsx";
 
 type StarScreenProps = {
   gameId: string;
@@ -38,7 +39,10 @@ const StartScreen: React.FC<StarScreenProps> = ({
   const isNewHighScore = score > lowestScore;
 
   const handleChangeName = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTempName(event.target.value);
+    const value = event.target.value;
+    // Use a regular expression to remove disallowed characters
+    const sanitizedValue = value.replace(/[^a-zA-Z0-9_]/g, "");
+    setTempName(sanitizedValue);
   };
 
   const onSaveNameClick = () => {
@@ -73,7 +77,7 @@ const StartScreen: React.FC<StarScreenProps> = ({
         {gameState === "ENDED" && (
           <>
             <p className="text text-gray-700">
-              Unfortunately{nameSpan} you need another {lowestScore - score}{" "}
+              Unfortunately{nameSpan} you need another {lowestScore - score + 1}{" "}
               points to get into the top 10.
             </p>
             <div className="py-2" />
@@ -101,6 +105,7 @@ const StartScreen: React.FC<StarScreenProps> = ({
             <div className="flex w-full gap-2 p-4">
               <input
                 type="text"
+                pattern="[^a-zA-Z0-9_]"
                 className="w-full rounded-sm bg-gray-100 p-2"
                 placeholder="Name"
                 onChange={handleChangeName}
@@ -108,8 +113,12 @@ const StartScreen: React.FC<StarScreenProps> = ({
             </div>
 
             <button
-              className="text-md w-full rounded-full bg-blue-500 p-2 text-white"
+              className={clsx("text-md w-full rounded-full  p-2 text-white", {
+                " bg-blue-500": tempName,
+                "cursor-not-allowed bg-gray-300": !tempName,
+              })}
               onClick={onSaveNameClick}
+              disabled={!tempName}
             >
               Save Name
             </button>

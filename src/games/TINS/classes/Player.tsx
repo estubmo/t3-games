@@ -222,26 +222,21 @@ export default class Player {
     }
   }
 
-  draw() {
+  drawPlayer = () => {
     this.context.beginPath();
     this.context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
     this.context.fillStyle = this.color;
     this.context.fill();
     this.context.strokeStyle = this.stroke || "transparent";
     this.context.stroke();
-    // Super power charge line
+    this.context.closePath();
+  };
+
+  drawPowerChargeIndicator = () => {
     this.context.strokeStyle = "white";
     this.context.setLineDash([6, 3.5]);
-    // this.context.setLineDash([2, 5]);
-    this.context.moveTo(this.x, this.y);
     this.context.beginPath();
-
     this.context.fillStyle = "transparent";
-
-    this.velY *= this.friction;
-    this.velX *= this.friction;
-    this.handleMovement();
-
     this.context.arc(
       this.x,
       this.y,
@@ -250,9 +245,21 @@ export default class Player {
       ((Math.PI * 2) / 10) * this.superPowerCharge,
       false
     );
-
     this.context.stroke();
+    this.context.closePath();
+
     if (this.shotCooldownCounter > 0) this.shotCooldownCounter--;
+  };
+
+  draw() {
+    this.velY *= this.friction;
+    this.velX *= this.friction;
+    this.handleMovement();
+
+    // draw player
+    this.drawPlayer();
+    // Draw super power charge line
+    this.drawPowerChargeIndicator();
     // Cleanup
     this.context.setLineDash([]);
     this.context.strokeStyle = "transparent";

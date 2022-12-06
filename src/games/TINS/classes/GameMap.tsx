@@ -16,7 +16,7 @@ export default class GameMap {
   enemies: Set<Enemy>;
   particles: Set<Particle>;
 
-  spawnEnemiesIntervalId: NodeJS.Timer | undefined;
+  enemySpawners: Array<NodeJS.Timer>;
 
   endGameCallback: () => void;
   updateScoreCallback: () => void;
@@ -49,6 +49,7 @@ export default class GameMap {
 
     this.endGameCallback = endGameCallback;
     this.updateScoreCallback = updateScoreCallback;
+    this.enemySpawners = new Array<NodeJS.Timer>();
     this.startSpawnEnemies(showEnemyHealth);
   }
 
@@ -95,13 +96,19 @@ export default class GameMap {
   };
 
   startSpawnEnemies = (showEnemyHealth: boolean) => {
-    this.spawnEnemiesIntervalId = setInterval(() => {
-      this.enemies.add(this.spawnEnemy(showEnemyHealth));
-    }, ENEMY_SPAWN_TIMER);
+    this.enemySpawners.push(
+      setInterval(() => {
+        this.enemies.add(this.spawnEnemy(showEnemyHealth));
+        console.log("Spawn enemy");
+      }, ENEMY_SPAWN_TIMER)
+    );
   };
 
   stopSpawnenemies = () => {
-    clearInterval(this.spawnEnemiesIntervalId);
+    this.enemySpawners.forEach((id) => {
+      clearInterval(id);
+    });
+    this.enemySpawners = [];
   };
 
   enemyExplosion = (enemy: Enemy) => {
@@ -137,6 +144,7 @@ export default class GameMap {
     const dist = Math.hypot(this.player.x - enemy.x, this.player.y - enemy.y);
     if (dist - enemy.radius - this.player.radius < 1) {
       this.endGameCallback();
+      this.stopSpawnenemies();
     }
   };
 
@@ -157,6 +165,10 @@ export default class GameMap {
   };
 
   draw() {
+    // Rect
+    this.context.fillStyle = "rgba(0, 0, 0, 0.8)";
+    this.context.fillRect(0, 0, this.width, this.height);
+
     this.player.draw();
 
     // Enemies
