@@ -65,7 +65,7 @@ const StartScreen: React.FC<StarScreenProps> = ({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center">
-      <div className="relative flex w-full max-w-md flex-col items-center justify-center rounded bg-white px-10 py-4">
+      <div className="relative flex w-full max-w-md select-text flex-col items-center justify-center rounded bg-white px-10 py-4">
         <Link className="absolute top-0 left-0 p-2" href="/">
           <ArrowLeftIcon className="h-6 w-6" />
         </Link>

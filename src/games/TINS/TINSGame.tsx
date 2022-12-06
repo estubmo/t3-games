@@ -1,19 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import Enemy from "../../classes/Enemy";
-import type Projectile from "../../classes/Projectile";
-import Particle from "../../classes/Particle";
-import Player from "../../classes/Player";
+import { useEffect, useRef, useState } from "react";
 import { trpc } from "@utils/trpc";
 import StartScreen from "./StartScreen";
+import GameMap from "./classes/GameMap";
 
 type CanvasProps = {
   width: number;
   height: number;
 };
-
-const SUPER_POWER_ENABLE_NUM = 10;
-const ENEMY_SPAWN_TIMER = 750;
-const MINIMUM_ENEMY_HEALTH = 10;
 
 export type GameState =
   | "WELCOME"
@@ -31,8 +24,6 @@ const TINSGame = ({ width, height }: CanvasProps) => {
   const addScoreMutation = trpc.score.addScoreByGameId.useMutation();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const canvasCenterX = width / 2;
-  const canvasCenterY = height / 2;
 
   // Score stuff
   const [score, setScore] = useState(0);
@@ -42,58 +33,12 @@ const TINSGame = ({ width, height }: CanvasProps) => {
 
   // Debug info
   const [showDebugInfo, setShowDebugInfo] = useState(false);
+
   const [numEnemies, setNumEnemies] = useState(0);
   const [numProjectiles, setNumProjectiles] = useState(0);
   const [numParticles, setNumParticles] = useState(0);
 
   const [gameState, setGameState] = useState<GameState>("WELCOME");
-
-  const getSpawnFromAnyAngle = useCallback(
-    (radius: number): { x: number; y: number; angle: number } => {
-      let x;
-      let y;
-
-      if (Math.random() < 0.5) {
-        x = Math.random() < 0.5 ? 0 - radius : width + radius;
-        y = Math.random() * height;
-      } else {
-        x = Math.random() * width;
-        y = Math.random() < 0.5 ? 0 - radius : height + radius;
-      }
-      return { x, y, angle: Math.atan2(canvasCenterY - y, canvasCenterX - x) };
-    },
-    [height, width, canvasCenterX, canvasCenterY]
-  );
-
-  const spawnEnemy = useCallback(
-    (context: CanvasRenderingContext2D, showEnemyHealth: boolean): Enemy => {
-      const radius = Math.floor(Math.random() * 10) * 10 + 10;
-
-      const { x, y, angle } = getSpawnFromAnyAngle(radius);
-      const color = `hsl(${Math.random() * 360}, 50%, 50%)`;
-
-      const velocity = {
-        x: Math.cos(angle) * 5,
-        y: Math.sin(angle) * 5,
-      };
-
-      return new Enemy(context, x, y, radius, color, velocity, showEnemyHealth);
-    },
-    [getSpawnFromAnyAngle]
-  );
-
-  const startSpawnEnemies = useCallback(
-    (
-      enemies: Set<Enemy>,
-      context: CanvasRenderingContext2D,
-      showEnemyHealth: boolean
-    ) => {
-      setInterval(() => {
-        enemies.add(spawnEnemy(context, showEnemyHealth));
-      }, ENEMY_SPAWN_TIMER);
-    },
-    [spawnEnemy]
-  );
 
   const handleSaveScore = (name: string) => {
     if (!gameId) throw new Error("No gameId");
@@ -107,20 +52,26 @@ const TINSGame = ({ width, height }: CanvasProps) => {
   useEffect(() => {
     if (canvasRef.current) {
       if (gameState !== "RUNNING") return;
-      // Reset score on start
+
       setGameState("RUNNING");
+
+      // Reset score on start
       setScore(0);
+
       // Canvas init
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d", { alpha: false });
 
-      if (context == null) throw new Error("Could not get context");
+      // Create an off-screen canvas to render the game
+      const offScreenCanvas = document.createElement("canvas");
+      const offScreenContext = offScreenCanvas.getContext("2d");
 
-      // Declare objects and arrays
-      const player = new Player(context, width / 2, height / 2, 10, "white");
-      const projectiles = new Set<Projectile>();
-      const enemies = new Set<Enemy>();
-      const particles = new Set<Particle>();
+      // Set the dimensions of the off-screen canvas to match the on-screen canvas
+      offScreenCanvas.width = canvas.width;
+      offScreenCanvas.height = canvas.height;
+
+      if (context === null) throw new Error("Could not get context");
+      if (offScreenContext === null) throw new Error("Could not get context");
 
       //Mouse
       const cursorPosition = { x: 0, y: 0 };
@@ -137,65 +88,41 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         setScore((prev) => prev + 1); // Make score available outside useEffect
       };
 
-      const killPlayerByEnemy = (enemy: Enemy) => {
-        // Death - When enemy touches player
-        const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-        if (dist - enemy.radius - player.radius < 1) {
-          cancelAnimationFrame(animationFrameId);
-          setGameState("ENDED");
-        }
+      const endGame = () => {
+        cancelAnimationFrame(animationFrameId);
+        setGameState("ENDED");
       };
 
-      const checkProjectileHitEnemy = (enemy: Enemy) => {
-        // Projectiles
-        projectiles.forEach((projectile) => {
-          const dist = Math.hypot(
-            projectile.x - enemy.x,
-            projectile.y - enemy.y
-          );
+      const offScreenMap = new GameMap(
+        offScreenContext,
+        width,
+        height,
+        showEnemyHealth,
+        endGame,
+        updateScore
+      );
 
-          // When projectile touches enemy
-          if (dist - enemy.radius - projectile.radius < 1) {
-            if (enemy.radius >= 10) {
-              enemy.takeDamage(projectile.damage);
+      function drawGame() {
+        // Clear the off-screen canvas
+        offScreenContext?.clearRect(
+          0,
+          0,
+          offScreenCanvas.width,
+          offScreenCanvas.height
+        );
 
-              if (!projectile.isSuperPower) projectiles.delete(projectile);
-            }
-          }
-        });
-      };
+        // Draw the game objects to the off-screen canvas
+        offScreenMap.draw();
 
-      const enemyExplosion = (enemy: Enemy) => {
-        for (let i = 0; i < enemy.radius * 2; i++) {
-          particles.add(
-            new Particle(
-              context,
-              enemy.x,
-              enemy.y,
-              Math.random() * 2,
-              enemy.color,
-              {
-                x: (Math.random() - 0.5) * (Math.random() * 6),
-                y: (Math.random() - 0.5) * (Math.random() * 6),
-              }
-            )
-          );
-        }
-      };
-
-      const enablePlayerSuperPower = () => {
-        player.toggleSuperPower(true);
-        const intervalId = setInterval(() => {
-          if (player.superPowerCharge === 0) {
-            player.toggleSuperPower(false);
-            clearInterval(intervalId);
-          } else player.decrementSuperPowerCharge();
-        }, 500);
-      };
+        // Copy the entire off-screen canvas to the on-screen canvas
+        context?.drawImage(offScreenCanvas, 0, 0);
+      }
 
       const render = () => {
         // This animates the next frame
         animationFrameId = window.requestAnimationFrame(render);
+        // map.draw();
+        drawGame();
 
         // Framerate handling
         const now = Date.now();
@@ -204,76 +131,31 @@ const TINSGame = ({ width, height }: CanvasProps) => {
           then = now - (delta % fpsInterval);
 
           if (leftMouseDown) {
-            player.shoot(projectiles, cursorPosition);
+            offScreenMap.player.shoot(cursorPosition);
           }
 
           // Color background
           context.fillStyle = "rgba(0, 0, 0, 0.3)";
           context.fillRect(0, 0, width, height);
 
-          // Draw functions
-          // Player
-          player.draw();
-
-          // Particles
-          particles.forEach((particle) => {
-            if (particle.alpha <= 0) {
-              particles.delete(particle);
-            }
-            particle.update();
-          });
-
-          // Projectiles
-          projectiles.forEach((projectile) => {
-            projectile.update();
-
-            // Cleanup
-            if (
-              projectile.x - projectile.radius < 1 ||
-              projectile.x - projectile.radius > width ||
-              projectile.y - projectile.radius < 1 ||
-              projectile.y - projectile.radius > height
-            ) {
-              projectiles.delete(projectile);
-            }
-          });
-
-          // Enemies
-          enemies.forEach((enemy) => {
-            enemy.update(player.x, player.y);
-
-            if (enemy.radius < MINIMUM_ENEMY_HEALTH) {
-              enemies.delete(enemy);
-              enemyExplosion(enemy);
-
-              if (!player.superPowerOn) player.incrementSuperPowerCharge();
-              if (player.superPowerCharge === SUPER_POWER_ENABLE_NUM)
-                enablePlayerSuperPower();
-
-              updateScore();
-            }
-
-            killPlayerByEnemy(enemy);
-            checkProjectileHitEnemy(enemy);
-          });
-
           // Update functions
-          setNumEnemies(enemies.size);
-          setNumProjectiles(projectiles.size);
-          setNumParticles(particles.size);
+          setNumEnemies(offScreenMap.enemies.size);
+          setNumProjectiles(offScreenMap.player.projectiles.size);
+          setNumParticles(offScreenMap.particles.size);
         }
       };
 
       render();
-      startSpawnEnemies(enemies, context, showEnemyHealth);
 
       const handleKeyDown = (event: KeyboardEvent) => {
-        if (event.altKey && event.key === "d")
+        if (event.ctrlKey && event.altKey && event.key === "d") {
           setShowDebugInfo((prev) => !prev);
-        if (event.key === "w") player.moveUp();
-        if (event.key === "a") player.moveLeft();
-        if (event.key === "s") player.moveDown();
-        if (event.key === "d") player.moveRight();
+        }
+        offScreenMap.player.handleKeyDown(event);
+      };
+
+      const handleKeyUp = (event: KeyboardEvent) => {
+        offScreenMap.player.handleKeyUp(event);
       };
 
       // Events and Event listeneres
@@ -299,10 +181,16 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         leftMouseDown = false;
       };
 
+      const handleVisibilityChange = () => {
+        offScreenMap.pause(document.hidden);
+      };
+
       canvas.addEventListener("mousemove", mouseMovementEvent, false);
       canvas.addEventListener("mousedown", onMouseDown);
       canvas.addEventListener("mouseup", onMouseUp);
       window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("keyup", handleKeyUp);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
 
       return () => {
         window.cancelAnimationFrame(animationFrameId);
@@ -310,9 +198,14 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         canvas.removeEventListener("mousedown", onMouseDown);
         canvas.removeEventListener("mouseup", onMouseUp);
         window.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("keyup", handleKeyUp);
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
       };
     }
-  }, [width, height, startSpawnEnemies, showEnemyHealth, gameState]);
+  }, [width, height, showEnemyHealth, gameState]);
 
   if (isLoading || !gameId)
     return (
@@ -322,7 +215,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
     );
 
   return (
-    <div className="border border-gray-400 bg-black">
+    <div className="select-none border border-gray-400 bg-black">
       <div className="absolute flex w-full select-none px-4 py-2 text-white">
         Score: {score}
       </div>

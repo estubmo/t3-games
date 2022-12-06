@@ -1,5 +1,4 @@
 import TINSGame from "@games/TINS/TINSGame";
-import { trpc } from "@utils/trpc";
 import React, { useLayoutEffect, useRef, useState } from "react";
 
 const MAX_WIDTH = 1920;
