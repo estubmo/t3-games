@@ -54,7 +54,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
     if (canvasRef.current) {
       if (gameState !== "RUNNING") return;
 
-      setGameState("ADDNAME");
+      setGameState("RUNNING");
 
       // Reset score on start
       setScore(0);
