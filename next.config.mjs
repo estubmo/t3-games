@@ -1,3 +1,5 @@
+import withBundleAnalyzer from "@next/bundle-analyzer";
+
 // @ts-check
 /**
  * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation.
@@ -13,5 +15,14 @@ const config = {
     locales: ["en"],
     defaultLocale: "en",
   },
+  devIndicators: {
+    buildActivityPosition: "bottom-right",
+  },
 };
-export default config;
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const bundleAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
+
+export default bundleAnalyzer(config);

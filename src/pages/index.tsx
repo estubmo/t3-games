@@ -1,3 +1,4 @@
+import React, { Suspense } from "react";
 import { type NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
@@ -6,6 +7,7 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import { trpc } from "../utils/trpc";
 import { type Game } from "../server/trpc/router/game";
 import { ArrowRightIcon } from "@heroicons/react/24/solid";
+import Image from "next/image";
 
 const GameBoxLink = (game: Game): JSX.Element => {
   const { name, description, shortName } = game;
@@ -24,18 +26,28 @@ const GameBoxLink = (game: Game): JSX.Element => {
   );
 };
 
-const Home: NextPage = () => {
-  const { data: games } = trpc.game.getAll.useQuery();
+const GameBoxList = (): JSX.Element => {
+  const { data: games, isLoading } = trpc.game.getAll.useQuery();
 
-  if (!games)
+  if (isLoading)
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-bl from-gray-900 to-gray-800">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 text-white">
-          Loading games...
-        </div>
-      </main>
+      <div>
+        <Image alt="loading" height={100} width={100} src="/rings.svg" />
+      </div>
     );
 
+  if (!games) return <div>No games in the library</div>;
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
+      {games.map((game) => (
+        <GameBoxLink key={game.id} {...game} />
+      ))}
+    </div>
+  );
+};
+
+const Home: NextPage = () => {
   return (
     <>
       <Head>
@@ -49,11 +61,7 @@ const Home: NextPage = () => {
           <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
             Eirik&apos;s <span className="text-green-500">Game</span> Library
           </h1>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-            {games.map((game) => (
-              <GameBoxLink key={game.id} {...game} />
-            ))}
-          </div>
+          <GameBoxList />
         </div>
       </main>
     </>
