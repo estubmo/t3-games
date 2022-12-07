@@ -1,51 +1,10 @@
-import React, { Suspense } from "react";
+import GameBoxList from "@components/GameBoxList";
 import { type NextPage } from "next";
-import Head from "next/head";
-import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
+import Head from "next/head";
+import React from "react";
 
 import { trpc } from "../utils/trpc";
-import { type Game } from "../server/trpc/router/game";
-import { ArrowRightIcon } from "@heroicons/react/24/solid";
-import Image from "next/image";
-
-const GameBoxLink = (game: Game): JSX.Element => {
-  const { name, description, shortName } = game;
-
-  return (
-    <Link
-      className="relative flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-      href={shortName}
-    >
-      <div className="absolute top-0 right-0 p-4">
-        <ArrowRightIcon className="h-6 w-6" />
-      </div>
-      <h3 className="text-2xl font-bold"> {name} </h3>
-      <div className="text-lg">{description} </div>
-    </Link>
-  );
-};
-
-const GameBoxList = (): JSX.Element => {
-  const { data: games, isLoading } = trpc.game.getAll.useQuery();
-
-  if (isLoading)
-    return (
-      <div>
-        <Image alt="loading" height={100} width={100} src="/rings.svg" />
-      </div>
-    );
-
-  if (!games) return <div>No games in the library</div>;
-
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-      {games.map((game) => (
-        <GameBoxLink key={game.id} {...game} />
-      ))}
-    </div>
-  );
-};
 
 const Home: NextPage = () => {
   return (
