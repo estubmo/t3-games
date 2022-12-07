@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { SetStateAction } from "react";
 import React, { useState } from "react";
 import type { GameState } from "./TINSGame";
-import clsx from "clsx";
 
 type StarScreenProps = {
   gameId: string;
@@ -113,14 +112,11 @@ const StartScreen: React.FC<StarScreenProps> = ({
             </div>
 
             <button
-              className={clsx("text-md w-full rounded-full  p-2 text-white", {
-                " bg-blue-500": tempName,
-                "cursor-not-allowed bg-gray-300": !tempName,
-              })}
+              className="text-md w-full rounded-full bg-blue-500 p-2 text-white disabled:cursor-not-allowed disabled:bg-gray-300"
               onClick={onSaveNameClick}
               disabled={!tempName}
             >
-              Save Name
+              Save game
             </button>
             <button
               className="text-md w-full p-2 text-blue-500"

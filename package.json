@@ -23,7 +23,6 @@
     "@trpc/next": "^10.4.3",
     "@trpc/react-query": "^10.4.3",
     "@trpc/server": "^10.4.3",
-    "clsx": "^1.2.1",
     "framer-motion": "^7.6.19",
     "gsap": "^3.11.3",
     "next": "13.0.2",
