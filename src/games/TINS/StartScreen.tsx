@@ -69,6 +69,11 @@ const StartScreen: React.FC<StarScreenProps> = ({
           <ArrowLeftIcon className="h-6 w-6" />
         </Link>
 
+        <h1 className="text-4xl font-bold">{score}</h1>
+        <p className="text-sm text-gray-700">Points</p>
+
+        <div className="py-2" />
+
         {gameState === "ENDED" && (
           <>
             <p className="text text-gray-700">
@@ -87,9 +92,6 @@ const StartScreen: React.FC<StarScreenProps> = ({
             <div className="py-2" />
           </>
         )}
-
-        <h1 className="text-4xl font-bold">{score}</h1>
-        <p className="text-sm text-gray-700">Points</p>
 
         <div className="py-2" />
 

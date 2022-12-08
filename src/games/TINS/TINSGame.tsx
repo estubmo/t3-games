@@ -41,7 +41,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
   const [numParticles, setNumParticles] = useState(0);
 
   const [gameState, setGameState] = useState<GameState>("WELCOME");
-  const [map, setMap] = useState<GameMap>();
+  const [map, setMap] = useState<GameMap | null>();
 
   useEffect(() => {
     if (canvasRef && canvasRef.current) {
@@ -71,6 +71,10 @@ const TINSGame = ({ width, height }: CanvasProps) => {
           new GameMap(offScreenContext, width, height, endGame, updateScore)
         );
       }
+
+      return () => {
+        setMap(null);
+      };
     }
   }, [offScreenCanvas, height, width, gameState]);
 
