@@ -29,7 +29,6 @@ export default class GameMap {
     context: CanvasRenderingContext2D,
     width: number,
     height: number,
-    showEnemyHealth: boolean,
 
     endGameCallback: () => void,
     updateScoreCallback: () => void
@@ -37,8 +36,6 @@ export default class GameMap {
     this.context = context;
     this.width = width;
     this.height = height;
-
-    this.showEnemyHealth = showEnemyHealth;
 
     this.player = new Player(
       context,
@@ -55,6 +52,7 @@ export default class GameMap {
     this.endGameCallback = endGameCallback;
     this.updateScoreCallback = updateScoreCallback;
     this.enemySpawners = new Array<NodeJS.Timer>();
+    this.showEnemyHealth = false;
   }
 
   pause(value: boolean) {
@@ -63,6 +61,10 @@ export default class GameMap {
       else this.startAllEnemySpawners();
     }
   }
+
+  toggleShowEnemyHealth = () => {
+    this.showEnemyHealth = !this.showEnemyHealth;
+  };
 
   getSpawnFromAnyAngle = (
     radius: number
@@ -80,7 +82,7 @@ export default class GameMap {
     return { x, y, angle: Math.atan2(this.height / 2 - y, this.width / 2 - x) };
   };
 
-  spawnEnemy = (showEnemyHealth: boolean): Enemy => {
+  spawnEnemy = (): Enemy => {
     const radius = Math.floor(Math.random() * 10) * 10 + 10;
     const { x, y, angle } = this.getSpawnFromAnyAngle(radius);
     const color = `hsl(${Math.random() * 360}, 50%, 50%)`;
@@ -89,23 +91,14 @@ export default class GameMap {
       x: Math.cos(angle) * 5,
       y: Math.sin(angle) * 5,
     };
-
-    return new Enemy(
-      this.context,
-      x,
-      y,
-      radius,
-      color,
-      velocity,
-      showEnemyHealth
-    );
+    return new Enemy(this.context, x, y, radius, color, velocity);
   };
 
   startAllEnemySpawners = () => {
     for (let i = 0; i < this.numEnemySpawners; i++) {
       this.enemySpawners.push(
         setInterval(() => {
-          this.enemies.add(this.spawnEnemy(this.showEnemyHealth));
+          this.enemies.add(this.spawnEnemy());
         }, ENEMY_SPAWN_TIMER)
       );
     }
@@ -121,7 +114,7 @@ export default class GameMap {
   startOneEnemySpawner = () => {
     this.enemySpawners.push(
       setInterval(() => {
-        this.enemies.add(this.spawnEnemy(this.showEnemyHealth));
+        this.enemies.add(this.spawnEnemy());
       }, ENEMY_SPAWN_TIMER)
     );
   };
@@ -213,7 +206,7 @@ export default class GameMap {
 
     // Enemies
     this.enemies.forEach((enemy) => {
-      enemy.update(this.player.x, this.player.y);
+      enemy.update(this.player.x, this.player.y, this.showEnemyHealth);
 
       if (enemy.radius < MINIMUM_ENEMY_HEALTH) {
         this.enemies.delete(enemy);

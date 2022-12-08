@@ -13,8 +13,6 @@ type StarScreenProps = {
   score: number;
   onSaveName: (name: string) => void;
   onSaveScore: (name: string) => void;
-  showEnemyHealth: boolean;
-  onShowEnemyHealth: (value: SetStateAction<boolean>) => void;
 };
 
 const StartScreen: React.FC<StarScreenProps> = ({
@@ -25,8 +23,6 @@ const StartScreen: React.FC<StarScreenProps> = ({
   score,
   onSaveName,
   onSaveScore,
-  showEnemyHealth,
-  onShowEnemyHealth,
 }) => {
   const [tempName, setTempName] = useState(name);
 
@@ -138,14 +134,6 @@ const StartScreen: React.FC<StarScreenProps> = ({
           </button>
         )}
         <div className="py-2"></div>
-        <div className="flex gap-2 pt-1 text-sm">
-          <p>Show enemy health:</p>
-          <input
-            type="checkbox"
-            checked={showEnemyHealth}
-            onChange={() => onShowEnemyHealth((prev) => !prev)}
-          />
-        </div>
       </div>
     </div>
   );

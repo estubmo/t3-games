@@ -5,7 +5,6 @@ export default class Enemy extends Circle {
   velocity: { x: number; y: number };
   damageTaken: number;
   originialRadius: number;
-  showEnemyHealth: boolean;
 
   constructor(
     context: CanvasRenderingContext2D,
@@ -13,27 +12,23 @@ export default class Enemy extends Circle {
     y: number,
     radius: number,
     color: string,
-    velocity: { x: number; y: number },
-    showEnemyHealth = false
+    velocity: { x: number; y: number }
   ) {
     super(context, x, y, radius, color);
     this.damageTaken = 0;
     this.velocity = velocity;
     this.originialRadius = radius;
-    this.showEnemyHealth = showEnemyHealth;
   }
 
-  update(playerX: number, playerY: number) {
-    this.draw();
+  update(playerX: number, playerY: number, showEnemyHealth: boolean) {
+    this.draw(showEnemyHealth);
+
     const updatedVelocity = {
       x: Math.cos(Math.atan2(playerY - this.y, playerX - this.x)) * 5,
       y: Math.sin(Math.atan2(playerY - this.y, playerX - this.x)) * 5,
     };
     this.x = this.x + updatedVelocity.x / (this.radius / 7.5);
     this.y = this.y + updatedVelocity.y / (this.radius / 7.5);
-    this.context.fillStyle = "white";
-    if (this.showEnemyHealth)
-      this.context.fillText(Math.floor(this.radius).toString(), this.x, this.y);
   }
 
   takeDamage(damage: number) {

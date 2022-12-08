@@ -22,7 +22,18 @@ export default class Circle {
     this.stroke = stroke;
   }
 
-  draw() {
+  drawHealth() {
+    this.context.fillStyle = "white";
+
+    this.context.fillText(
+      Math.floor(this.radius).toString(),
+      this.x - 5,
+      this.y + 3
+    );
+    this.context.fillStyle = "transparent";
+  }
+
+  draw(showHealth = false) {
     this.context.save();
     this.context.beginPath();
     this.context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
@@ -32,5 +43,9 @@ export default class Circle {
     this.context.strokeStyle = this.stroke || "transparent";
     this.context.stroke();
     this.context.restore();
+
+    if (showHealth) {
+      this.drawHealth();
+    }
   }
 }

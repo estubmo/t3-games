@@ -26,6 +26,8 @@ const TINSGame = ({ width, height }: CanvasProps) => {
   const addScoreMutation = trpc.score.addScoreByGameId.useMutation();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // For double buffering
+  const [offScreenCanvas, setOffScreenCanvas] = useState<HTMLCanvasElement>();
 
   // Score stuff
   const [score, setScore] = useState(0);
@@ -33,16 +35,13 @@ const TINSGame = ({ width, height }: CanvasProps) => {
 
   // Debug info
   const [showDebugInfo, setShowDebugInfo] = useState(false);
-  const [showEnemyHealth, setShowEnemyHealth] = useState(false);
-
   const [numEnemies, setNumEnemies] = useState(0);
+
   const [numProjectiles, setNumProjectiles] = useState(0);
   const [numParticles, setNumParticles] = useState(0);
 
   const [gameState, setGameState] = useState<GameState>("WELCOME");
   const [map, setMap] = useState<GameMap>();
-
-  const [offScreenCanvas, setOffScreenCanvas] = useState<HTMLCanvasElement>();
 
   useEffect(() => {
     if (canvasRef && canvasRef.current) {
@@ -69,18 +68,16 @@ const TINSGame = ({ width, height }: CanvasProps) => {
       const offScreenContext = offScreenCanvas.getContext("2d");
       if (offScreenContext && width !== 0 && height !== 0) {
         setMap(
-          new GameMap(
-            offScreenContext,
-            width,
-            height,
-            showEnemyHealth,
-            endGame,
-            updateScore
-          )
+          new GameMap(offScreenContext, width, height, endGame, updateScore)
         );
       }
     }
-  }, [offScreenCanvas, showEnemyHealth, height, width, gameState]);
+  }, [offScreenCanvas, height, width, gameState]);
+
+  const handleToggleDebugInfo = () => {
+    setShowDebugInfo((prev) => !prev);
+    map?.toggleShowEnemyHealth();
+  };
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -92,6 +89,11 @@ const TINSGame = ({ width, height }: CanvasProps) => {
       if (gameState !== "RUNNING") return;
       map.beginGame();
       setScore(0);
+
+      // Hacky code to ensure show enenemy health state in Map is in sync with showDebugInfo state
+      if (map.showEnemyHealth !== showDebugInfo) {
+        map.toggleShowEnemyHealth();
+      }
 
       //Mouse
       const cursorPosition = { x: 0, y: 0 };
@@ -149,7 +151,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
 
       const handleKeyDown = (event: KeyboardEvent) => {
         if (event.ctrlKey && event.altKey && event.key === "d") {
-          setShowDebugInfo((prev) => !prev);
+          handleToggleDebugInfo();
         }
         map.player.handleKeyDown(event);
       };
@@ -230,20 +232,6 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         Score: {score}
       </div>
 
-      {gameState !== "RUNNING" && (
-        <StartScreen
-          gameId={gameId}
-          gameState={gameState}
-          setGameState={setGameState}
-          score={score}
-          name={name}
-          onSaveName={setName}
-          onSaveScore={handleSaveScore}
-          showEnemyHealth={showEnemyHealth}
-          onShowEnemyHealth={setShowEnemyHealth}
-        />
-      )}
-
       {showDebugInfo && (
         <div className="absolute bottom-0 left-0 flex  w-full select-none flex-col px-4 py-2 text-white">
           <p className="pb-4">Game State: {gameState}</p>
@@ -254,6 +242,18 @@ const TINSGame = ({ width, height }: CanvasProps) => {
       )}
 
       <canvas ref={canvasRef} height={height} width={width} />
+
+      {gameState !== "RUNNING" && map && (
+        <StartScreen
+          gameId={gameId}
+          gameState={gameState}
+          setGameState={setGameState}
+          score={score}
+          name={name}
+          onSaveName={setName}
+          onSaveScore={handleSaveScore}
+        />
+      )}
     </div>
   );
 };
