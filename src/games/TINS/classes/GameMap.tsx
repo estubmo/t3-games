@@ -5,18 +5,22 @@ import Player from "./Player";
 const SUPER_POWER_ENABLE_NUM = 10;
 const ENEMY_SPAWN_TIMER = 750;
 const MINIMUM_ENEMY_HEALTH = 10;
+const DEFAULT_NUM_ENEMY_SPAWNERS = 1;
 
 export default class GameMap {
   context: CanvasRenderingContext2D;
+  animationFrameId = 0;
   width: number;
   height: number;
   showEnemyHealth: boolean;
+  gameRunning = false;
 
   player: Player;
   enemies: Set<Enemy>;
   particles: Set<Particle>;
 
   enemySpawners: Array<NodeJS.Timer>;
+  numEnemySpawners = DEFAULT_NUM_ENEMY_SPAWNERS;
 
   endGameCallback: () => void;
   updateScoreCallback: () => void;
@@ -33,6 +37,7 @@ export default class GameMap {
     this.context = context;
     this.width = width;
     this.height = height;
+
     this.showEnemyHealth = showEnemyHealth;
 
     this.player = new Player(
@@ -50,13 +55,15 @@ export default class GameMap {
     this.endGameCallback = endGameCallback;
     this.updateScoreCallback = updateScoreCallback;
     this.enemySpawners = new Array<NodeJS.Timer>();
-    this.startSpawnEnemies(showEnemyHealth);
   }
 
   pause(value: boolean) {
-    if (value) this.stopSpawnenemies();
-    else this.startSpawnEnemies(this.showEnemyHealth);
+    if (this.gameRunning) {
+      if (value) this.pauseAllEnemySpawners();
+      else this.startAllEnemySpawners();
+    }
   }
+
   getSpawnFromAnyAngle = (
     radius: number
   ): { x: number; y: number; angle: number } => {
@@ -75,7 +82,6 @@ export default class GameMap {
 
   spawnEnemy = (showEnemyHealth: boolean): Enemy => {
     const radius = Math.floor(Math.random() * 10) * 10 + 10;
-
     const { x, y, angle } = this.getSpawnFromAnyAngle(radius);
     const color = `hsl(${Math.random() * 360}, 50%, 50%)`;
 
@@ -95,20 +101,33 @@ export default class GameMap {
     );
   };
 
-  startSpawnEnemies = (showEnemyHealth: boolean) => {
-    this.enemySpawners.push(
-      setInterval(() => {
-        this.enemies.add(this.spawnEnemy(showEnemyHealth));
-        console.log("Spawn enemy");
-      }, ENEMY_SPAWN_TIMER)
-    );
+  startAllEnemySpawners = () => {
+    for (let i = 0; i < this.numEnemySpawners; i++) {
+      this.enemySpawners.push(
+        setInterval(() => {
+          this.enemies.add(this.spawnEnemy(this.showEnemyHealth));
+        }, ENEMY_SPAWN_TIMER)
+      );
+    }
   };
 
-  stopSpawnenemies = () => {
+  pauseAllEnemySpawners = () => {
     this.enemySpawners.forEach((id) => {
       clearInterval(id);
     });
     this.enemySpawners = [];
+  };
+
+  startOneEnemySpawner = () => {
+    this.enemySpawners.push(
+      setInterval(() => {
+        this.enemies.add(this.spawnEnemy(this.showEnemyHealth));
+      }, ENEMY_SPAWN_TIMER)
+    );
+  };
+
+  pauseOneEnemySpawner = () => {
+    this.enemySpawners.pop();
   };
 
   enemyExplosion = (enemy: Enemy) => {
@@ -143,8 +162,7 @@ export default class GameMap {
     // Death - When enemy touches player
     const dist = Math.hypot(this.player.x - enemy.x, this.player.y - enemy.y);
     if (dist - enemy.radius - this.player.radius < 1) {
-      this.endGameCallback();
-      this.stopSpawnenemies();
+      this.endGame();
     }
   };
 
@@ -164,7 +182,29 @@ export default class GameMap {
     });
   };
 
-  draw() {
+  decrementNumEnemySpawners = () => {
+    this.numEnemySpawners--;
+  };
+
+  incrementNumEnemySpawners = () => {
+    this.numEnemySpawners++;
+  };
+
+  beginGame = () => {
+    this.gameRunning = true;
+    this.startAllEnemySpawners();
+  };
+
+  endGame = () => {
+    this.gameRunning = false;
+    cancelAnimationFrame(this.animationFrameId);
+    this.pauseAllEnemySpawners();
+    this.endGameCallback();
+  };
+
+  draw(animationFrameId: number) {
+    this.animationFrameId = animationFrameId;
+
     // Rect
     this.context.fillStyle = "rgba(0, 0, 0, 0.8)";
     this.context.fillRect(0, 0, this.width, this.height);

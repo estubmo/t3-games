@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { trpc } from "@utils/trpc";
-import StartScreen from "./StartScreen";
-import GameMap from "./classes/GameMap";
 import { sanitizeDatabaseInput } from "@utils/functions";
+import { trpc } from "@utils/trpc";
+import { useEffect, useRef, useState } from "react";
+import GameMap from "./classes/GameMap";
+import StartScreen from "./StartScreen";
 
 type CanvasProps = {
   width: number;
@@ -30,49 +30,68 @@ const TINSGame = ({ width, height }: CanvasProps) => {
   const [score, setScore] = useState(0);
   const [name, setName] = useState("");
 
-  const [showEnemyHealth, setShowEnemyHealth] = useState(false);
-
   // Debug info
   const [showDebugInfo, setShowDebugInfo] = useState(false);
+  const [showEnemyHealth, setShowEnemyHealth] = useState(false);
 
   const [numEnemies, setNumEnemies] = useState(0);
   const [numProjectiles, setNumProjectiles] = useState(0);
   const [numParticles, setNumParticles] = useState(0);
 
   const [gameState, setGameState] = useState<GameState>("WELCOME");
+  const [map, setMap] = useState<GameMap>();
 
-  const handleSaveScore = (name: string) => {
-    if (!gameId) throw new Error("No gameId");
-    addScoreMutation.mutate({
-      gameId,
-      score,
-      name: sanitizeDatabaseInput(name),
-    });
-  };
+  const [offScreenCanvas, setOffScreenCanvas] = useState<HTMLCanvasElement>();
+
+  useEffect(() => {
+    if (canvasRef && canvasRef.current) {
+      // Create an off-screen canvas to render the game
+      const offScreenCanvas = document.createElement("canvas");
+      offScreenCanvas.height = height;
+      offScreenCanvas.width = width;
+
+      if (offScreenCanvas === null) return;
+      setOffScreenCanvas(offScreenCanvas);
+    }
+  }, [canvasRef, height, width]);
+
+  useEffect(() => {
+    const updateScore = () => {
+      setScore((prev) => prev + 1); // Make score available outside useEffect
+    };
+
+    const endGame = () => {
+      setGameState("ENDED");
+    };
+
+    if (canvasRef.current && offScreenCanvas) {
+      const offScreenContext = offScreenCanvas.getContext("2d");
+      if (offScreenContext && width !== 0 && height !== 0) {
+        setMap(
+          new GameMap(
+            offScreenContext,
+            width,
+            height,
+            showEnemyHealth,
+            endGame,
+            updateScore
+          )
+        );
+      }
+    }
+  }, [offScreenCanvas, showEnemyHealth, height, width, gameState]);
 
   useEffect(() => {
     if (canvasRef.current) {
-      if (gameState !== "RUNNING") return;
-
-      setGameState("RUNNING");
-
       // Reset score on start
       setScore(0);
 
       // Canvas init
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d", { alpha: false });
-
-      // Create an off-screen canvas to render the game
-      const offScreenCanvas = document.createElement("canvas");
-      const offScreenContext = offScreenCanvas.getContext("2d");
-
-      // Set the dimensions of the off-screen canvas to match the on-screen canvas
-      offScreenCanvas.width = canvas.width;
-      offScreenCanvas.height = canvas.height;
-
-      if (context === null) throw new Error("Could not get context");
-      if (offScreenContext === null) throw new Error("Could not get context");
+      const offScreenContext = offScreenCanvas?.getContext("2d");
+      if (!offScreenContext || !map) return;
+      if (gameState !== "RUNNING") return;
 
       //Mouse
       const cursorPosition = { x: 0, y: 0 };
@@ -83,27 +102,12 @@ const TINSGame = ({ width, height }: CanvasProps) => {
       let then = Date.now();
       const fps = 60;
       const fpsInterval = 1000 / fps;
+      map.beginGame();
 
       // Functions
-      const updateScore = () => {
-        setScore((prev) => prev + 1); // Make score available outside useEffect
-      };
+      function drawGame(animationFrameId: number) {
+        if (!offScreenCanvas || !map) return;
 
-      const endGame = () => {
-        cancelAnimationFrame(animationFrameId);
-        setGameState("ENDED");
-      };
-
-      const map = new GameMap(
-        offScreenContext,
-        width,
-        height,
-        showEnemyHealth,
-        endGame,
-        updateScore
-      );
-
-      function drawGame() {
         // Clear the off-screen canvas
         offScreenContext?.clearRect(
           0,
@@ -113,7 +117,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         );
 
         // Draw the game objects to the off-screen canvas
-        map.draw();
+        map.draw(animationFrameId);
 
         // Copy the entire off-screen canvas to the on-screen canvas
         context?.drawImage(offScreenCanvas, 0, 0);
@@ -122,7 +126,6 @@ const TINSGame = ({ width, height }: CanvasProps) => {
       const render = () => {
         // This animates the next frame
         animationFrameId = window.requestAnimationFrame(render);
-        // map.draw();
 
         // Framerate handling
         const now = Date.now();
@@ -134,7 +137,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
             map.player.shoot(cursorPosition);
           }
 
-          drawGame();
+          drawGame(animationFrameId);
 
           // Update functions
           setNumEnemies(map.enemies.size);
@@ -201,10 +204,19 @@ const TINSGame = ({ width, height }: CanvasProps) => {
           "visibilitychange",
           handleVisibilityChange
         );
-        map.stopSpawnenemies();
+        map.pauseAllEnemySpawners();
       };
     }
-  }, [width, height, showEnemyHealth, gameState]);
+  }, [map, offScreenCanvas, gameState]);
+
+  const handleSaveScore = (name: string) => {
+    if (!gameId) throw new Error("No gameId");
+    addScoreMutation.mutate({
+      gameId,
+      score,
+      name: sanitizeDatabaseInput(name),
+    });
+  };
 
   if (isLoading || !gameId)
     return (
@@ -235,6 +247,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
 
       {showDebugInfo && (
         <div className="absolute bottom-0 left-0 flex  w-full select-none flex-col px-4 py-2 text-white">
+          <p className="pb-4">Game State: {gameState}</p>
           <p>Enemies: {numEnemies}</p>
           <p>Projectiles: {numProjectiles}</p>
           <p>Particles: {numParticles}</p>
