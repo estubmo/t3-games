@@ -1,5 +1,6 @@
 import { sanitizeDatabaseInput } from "@utils/functions";
 import { trpc } from "@utils/trpc";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import GameMap from "./classes/GameMap";
 import StartScreen from "./StartScreen";
@@ -83,15 +84,14 @@ const TINSGame = ({ width, height }: CanvasProps) => {
 
   useEffect(() => {
     if (canvasRef.current) {
-      // Reset score on start
-      setScore(0);
-
       // Canvas init
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d", { alpha: false });
       const offScreenContext = offScreenCanvas?.getContext("2d");
       if (!offScreenContext || !map) return;
       if (gameState !== "RUNNING") return;
+      map.beginGame();
+      setScore(0);
 
       //Mouse
       const cursorPosition = { x: 0, y: 0 };
@@ -102,7 +102,6 @@ const TINSGame = ({ width, height }: CanvasProps) => {
       let then = Date.now();
       const fps = 60;
       const fpsInterval = 1000 / fps;
-      map.beginGame();
 
       // Functions
       function drawGame(animationFrameId: number) {
@@ -221,7 +220,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
   if (isLoading || !gameId)
     return (
       <div className="flex h-screen w-full items-center justify-center border border-gray-400 bg-black text-lg text-white">
-        Loading game...
+        <Image alt="loading" height={100} width={100} src="/rings.svg" />
       </div>
     );
 
