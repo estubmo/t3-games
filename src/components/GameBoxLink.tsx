@@ -7,7 +7,7 @@ const GameBoxLink = (game: Game): JSX.Element => {
 
   return (
     <Link
-      className="relative flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:-rotate-6 hover:bg-white/20"
+      className="relative flex max-w-xs scale-90 flex-col gap-4 rounded-xl bg-white/10 p-4 text-white drop-shadow-none transition  ease-in-out hover:scale-100 hover:bg-white/20 hover:drop-shadow-lg"
       href={shortName}
     >
       <div className="absolute top-0 right-0 p-4">
