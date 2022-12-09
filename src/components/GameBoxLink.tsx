@@ -13,7 +13,7 @@ const GameBoxLink = (game: Game): JSX.Element => {
       <div className="absolute top-0 right-0 p-4">
         <ArrowRightIcon className="h-6 w-6" />
       </div>
-      <h3 className="text-2xl font-bold"> {name} </h3>
+      <h3 className="text-2xl font-bold text-green-400"> {name} </h3>
       <div className="text-lg">{description} </div>
     </Link>
   );

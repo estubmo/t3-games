@@ -1,8 +1,8 @@
-import React, { useRef } from "react";
-import { motion } from "framer-motion";
-import Link from "next/link";
 import { PuzzlePieceIcon } from "@heroicons/react/24/solid";
 import useHover from "@hooks/useHover";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { useRef } from "react";
 
 const Navbar = () => {
   const ref = useRef<HTMLElement>(null);
@@ -18,32 +18,16 @@ const Navbar = () => {
       >
         <div className="container mx-auto flex items-center justify-between px-4 py-2">
           <Link href="/" className="flex text-lg font-bold text-white ">
-            <PuzzlePieceIcon className="h-6 w-6 text-green-400" />
+            <PuzzlePieceIcon className="h-6 w-6 text-green-500" />
             <p className="pl-4">Eirik&apos;s Games</p>
           </Link>
           <ul className="flex">
             <li className="mr-6">
               <Link
-                href="/"
-                className="block font-bold text-white hover:text-green-700"
+                href="/brutal"
+                className="block font-bold text-white hover:text-green-200"
               >
-                Home
-              </Link>
-            </li>
-            <li className="mr-6">
-              <Link
-                href="#"
-                className="block font-bold text-white hover:text-green-700"
-              >
-                About
-              </Link>
-            </li>
-            <li className="mr-6">
-              <Link
-                href="#"
-                className="block font-bold text-white hover:text-green-700"
-              >
-                Contact
+                Brutalism
               </Link>
             </li>
           </ul>
