@@ -208,7 +208,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         map.pauseAllEnemySpawners();
       };
     }
-  }, [map, offScreenCanvas, gameState]);
+  }, [map, offScreenCanvas, gameState, handleToggleDebugInfo, showDebugInfo]);
 
   const handleSaveScore = (name: string) => {
     if (!gameId) throw new Error("No gameId");
