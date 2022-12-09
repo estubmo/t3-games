@@ -1,7 +1,7 @@
 import { sanitizeDatabaseInput } from "@utils/functions";
 import { trpc } from "@utils/trpc";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import GameMap from "./classes/GameMap";
 import StartScreen from "./StartScreen";
 
@@ -36,7 +36,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
   // Debug info
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [numEnemies, setNumEnemies] = useState(0);
-
+  const [numEnemySpawners, setNumEnemySpawners] = useState(0);
   const [numProjectiles, setNumProjectiles] = useState(0);
   const [numParticles, setNumParticles] = useState(0);
 
@@ -74,10 +74,10 @@ const TINSGame = ({ width, height }: CanvasProps) => {
     }
   }, [offScreenCanvas, height, width, gameState]);
 
-  const handleToggleDebugInfo = () => {
+  const handleToggleDebugInfo = useCallback(() => {
     setShowDebugInfo((prev) => !prev);
     map?.toggleShowEnemyHealth();
-  };
+  }, [map]);
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -144,6 +144,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
           setNumEnemies(map.enemies.size);
           setNumProjectiles(map.player.projectiles.size);
           setNumParticles(map.particles.size);
+          setNumEnemySpawners(map.enemySpawners.length);
         }
       };
 
@@ -236,6 +237,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
         <div className="absolute bottom-0 left-0 flex  w-full select-none flex-col px-4 py-2 text-white">
           <p className="pb-4">Game State: {gameState}</p>
           <p>Enemies: {numEnemies}</p>
+          <p>Enemy spawners: {numEnemySpawners}</p>
           <p>Projectiles: {numProjectiles}</p>
           <p>Particles: {numParticles}</p>
         </div>
