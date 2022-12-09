@@ -44,16 +44,12 @@ const TINSGame = ({ width, height }: CanvasProps) => {
   const [map, setMap] = useState<GameMap | null>();
 
   useEffect(() => {
-    if (canvasRef && canvasRef.current) {
-      // Create an off-screen canvas to render the game
-      const offScreenCanvas = document.createElement("canvas");
-      offScreenCanvas.height = height;
-      offScreenCanvas.width = width;
-
-      if (offScreenCanvas === null) return;
-      setOffScreenCanvas(offScreenCanvas);
-    }
-  }, [canvasRef, height, width]);
+    // Create an off-screen canvas to render the game
+    const offScreenCanvas = document.createElement("canvas");
+    offScreenCanvas.height = height;
+    offScreenCanvas.width = width;
+    setOffScreenCanvas(offScreenCanvas);
+  }, [height, width]);
 
   useEffect(() => {
     const updateScore = () => {
@@ -64,7 +60,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
       setGameState("ENDED");
     };
 
-    if (canvasRef.current && offScreenCanvas) {
+    if (offScreenCanvas) {
       const offScreenContext = offScreenCanvas.getContext("2d");
       if (offScreenContext && width !== 0 && height !== 0) {
         setMap(
