@@ -18,11 +18,9 @@ export type GameState =
   | "HIGHSCORE";
 
 const TINSGame = ({ width, height }: CanvasProps) => {
-  // trpc
-  const { data, isLoading } = trpc.game.byShortName.useQuery({
+  const { status, data, error, isFetching } = trpc.game.byShortName.useQuery({
     shortName: "tins",
   });
-  const gameId = data?.id;
   const addScoreMutation = trpc.score.addScoreByGameId.useMutation();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -212,20 +210,18 @@ const TINSGame = ({ width, height }: CanvasProps) => {
   }, [map, offScreenCanvas, gameState, handleToggleDebugInfo, showDebugInfo]);
 
   const handleSaveScore = (name: string) => {
-    if (!gameId) throw new Error("No gameId");
+    if (!data) throw new Error("No gameId");
     addScoreMutation.mutate({
-      gameId,
+      gameId: data.id,
       score,
       name: sanitizeDatabaseInput(name),
     });
   };
 
-  if (isLoading || !gameId)
-    return (
-      <div className="flex h-screen w-full items-center justify-center border border-gray-400 bg-black text-lg text-white">
-        <Image alt="loading" height={100} width={100} src="/rings.svg" />
-      </div>
-    );
+  if (status === "loading" || isFetching || !data)
+    return <Image alt="loading" height={200} width={200} src="/rings.svg" />;
+
+  if (status === "error") return <div>Error: {error.message}</div>;
 
   return (
     <div className="select-none border border-gray-400 bg-black">
@@ -247,7 +243,7 @@ const TINSGame = ({ width, height }: CanvasProps) => {
 
       {gameState !== "RUNNING" && map && (
         <StartScreen
-          gameId={gameId}
+          gameId={data.id}
           gameState={gameState}
           setGameState={setGameState}
           score={score}
