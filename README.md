@@ -30,6 +30,7 @@ For additional information see [create-t3-app docs](https://create.t3.gg).
 
 - [ ] Build a game using react-three-fiber
 - [ ] Build a game using three.js
+- [ ] Add some roguelike gameplay to TINS
 - [ ] Complete the neo-brutalism components library and export it to a new project
 
 Automatically deployed on vercel at [t3-games-estubmo](https://t3-games-estubmo.vercel.app/)
